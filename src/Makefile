@@ -21,7 +21,7 @@
 ### Files
 ###
 
-EXE = glaurung
+EXE = brainEngine
 
 OBJS = bitboard.o color.o pawns.o material.o endgame.o evaluate.o main.o \
 	misc.o move.o movegen.o history.o movepick.o search.o piece.o \
@@ -36,7 +36,7 @@ OBJS = bitboard.o color.o pawns.o material.o endgame.o evaluate.o main.o \
 all: $(EXE) .depend
 
 clean: 
-	$(RM) *.o .depend glaurung
+	$(RM) *.o .depend brainEngine
 
 
 ###
