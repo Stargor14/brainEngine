@@ -22,22 +22,19 @@ network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutati
 	n->paramMutationRate=paramMutationRate;
 	n->layers=layers;
 	n->layerNeuronCount=(int*)malloc(layers*sizeof(int));	
-	n->neuronWeights=(float*)malloc(inputNeurons+layers*neuronsInLayer*sizeof(float));
-	n->neuronValues=(float*)malloc(inputNeurons+layers*neuronsInLayer*sizeof(float));
-	n->layerNeuronCount[0]=inputNeurons;
+	n->neuronWeights=(float*)malloc(inputNeurons+(layers-1)*neuronsInLayer*sizeof(float));
+	n->neuronValues=(float*)malloc(inputNeurons+(layers-1)*neuronsInLayer*sizeof(float));
 	n->connectionNum=0;
 	n->neuronNum=0;
 	n->connections=(long*)malloc(sizeof(long)*((layers-2)*neuronsInLayer+inputNeurons));
 	srand(std::chrono::microseconds(std::chrono::system_clock::now().time_since_epoch()).count());//time since epoch as random seed
-	for(;n->neuronNum<inputNeurons;n->neuronNum++){
-		n->neuronWeights[n->neuronNum]=1;
+	for(int i=0;i<inputNeurons;i++){
+		addNeuron(n,0,1);
 		n->connections[n->connectionNum++]=createConnection(n->neuronNum,0,rand()%neuronsInLayer,1);//connects each input neuron to a random neuron in layer 1
 	}
 	for(int layer=1;layer<layers;layer++){//initializing arrays
-		n->layerNeuronCount[layer]=neuronsInLayer;
 		for(int i=0;i<neuronsInLayer;i++){
-			n->neuronWeights[n->neuronNum]=1;
-			n->neuronValues[n->neuronNum++]=0;
+			addNeuron(n,layer,1);
 			if(layer>1){
 				n->connections[n->connectionNum++]=createConnection(i+neuronsInLayer*(layer-1)+inputNeurons,layer-1,i+neuronsInLayer*layer+inputNeurons,layer);
 			}
@@ -184,17 +181,50 @@ void mutate(network* n){
 	 *after running neuron and connection mutations, does connection cleanup
 	 *making sure that each connection points to an actual neuron 
 	*/
+	//addNeuron(n,1,1);
+}
+void addNeuron(network* n, int layer, float weight){
+	/* increase value of layerNeuronCount and neuronNum
+	 * reallocate memory for weights and values
+	 * find new pointer of insertion point, memmove up by one
+	 * insert new neuron weight and initialize value as 0
+	 */
 	
+	n->neuronNum++;
+	n->neuronWeights=(float*)realloc(n->neuronWeights,sizeof(float)*n->neuronNum);
+	n->neuronValues=(float*)realloc(n->neuronValues,sizeof(float)*n->neuronNum);
+	float* temp=neuronAddressLocator(n,layer,n->layerNeuronCount[layer],true);
+	memmove((void*)temp,(void*)(temp+1),n->neuronValues+n->neuronNum-temp);
+	*temp=0;
+	temp=neuronAddressLocator(n,layer,n->layerNeuronCount[layer],false);
+	memmove((void*)temp,(void*)(temp+1),n->neuronWeights+n->neuronNum-temp);
+	*temp=weight;
+	n->layerNeuronCount[layer]++;
+}//create similar addConnection function, possibly replacing createConnection
+ //this also forces a slight change to the initial connection creations
+float* neuronAddressLocator(network* n, int layer, int relativeAddress, bool value){
+	int addressOffset=0;
+	for(int l;l<layer;l++){
+		for(int ln=0;ln<n->layerNeuronCount[l];ln++){
+			addressOffset++;
+		}
+	}
+	addressOffset+=relativeAddress;
+	if(value)return n->neuronValues+addressOffset;
+	return n->neuronWeights+addressOffset;
 }
 void printInfo(network* n){
 	std::cout<<"layers: "<<n->layers<<'\n';	
 	for(int i=0;i<n->layers;i++){
-		std::cout<<"layer "<<i<<"neurons: "<<n->layerNeuronCount[i]<<'\n';	
+		std::cout<<"layer "<<i<<" neurons: "<<n->layerNeuronCount[i]<<'\n';	
+		for(int j=0;j<n->layerNeuronCount[i];j++){
+			std::cout<<"neuron "<<i<<","<<j<<" Weight: "<<*neuronAddressLocator(n,i,j,false)<<" Value: "<<*neuronAddressLocator(n,i,j,true)<<'\n';
+		}
 	}
 }
 void test(){
 	network* n1=init(5,50,10,0.5,0.5,1,0.1, 10);
-	network* n2=init(5,50,10,0.5,0.5,1,0.1, 10);
+	//network* n2=init(5,50,10,0.5,0.5,1,0.1, 10);
 	//network* children=reproduce(n1,n2);
 	printInfo(n1);
 }

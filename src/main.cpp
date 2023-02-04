@@ -85,8 +85,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Print copyright notice
-  std::cout << engine_name() << ".  "
-            << "Copyright (C) 2004-2008 Tord Romstad."
+  std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"
             << std::endl;
 
   // Enter UCI mode

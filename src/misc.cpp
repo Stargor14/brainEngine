@@ -68,13 +68,13 @@ const std::string engine_name() {
         month = i + 1;
     day = atoi(dateString+4);
     
-    s << "Glaurung " << (dateString+9) << std::setfill('0') << std::setw(2)
-      << month << std::setfill('0') << std::setw(2) << day;
+    s << "CarnosaEngine " << (dateString+9)<<'/' << std::setfill('0') << std::setw(2)
+      << month << '/'<<std::setfill('0') << std::setw(2) << day;
     
     return s.str();
   }
   else
-    return "Glaurung " + EngineVersion;
+    return "CarnosaEngine " + EngineVersion;
 }
 
 
