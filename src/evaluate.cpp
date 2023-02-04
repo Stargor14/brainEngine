@@ -294,12 +294,12 @@ Value evaluate(const Position &pos, EvalInfo &ei, int threadID) {
   Color stm;
   ScaleFactor factor[2] = {SCALE_FACTOR_NORMAL, SCALE_FACTOR_NORMAL};
   Phase phase;
-
   memset(&ei, 0, sizeof(EvalInfo));
-
   assert(pos.is_ok());
   assert(threadID >= 0 && threadID < THREAD_MAX);
 
+  //insert custom eval here
+  
   stm = pos.side_to_move();
 
   // Initialize by reading the incrementally updated scores included in the

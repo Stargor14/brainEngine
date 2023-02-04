@@ -38,12 +38,11 @@
 #include "thread.h"
 #include "uci.h"
 #include "ucioption.h"
-
+#include "neuro.h"
 
 //// 
 //// Functions
 ////
-
 int main(int argc, char *argv[]) {
 
   // Disable IO buffering
@@ -65,6 +64,8 @@ int main(int argc, char *argv[]) {
   init_eval(1);
   init_bitbases();
   init_threads();
+
+  neuro::test();
 
   // Make random number generation less deterministic, for book moves
   int i = abs(get_system_time() % 10000);
