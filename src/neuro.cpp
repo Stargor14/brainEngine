@@ -24,11 +24,11 @@ network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutati
 	n->paramMutationRate=paramMutationRate;
 	n->layers=layers;
 	n->layerNeuronCount=(int*)malloc(layers*sizeof(int));	
-	n->neuronWeights=(float*)malloc(inputNeurons+(layers-1)*neuronsInLayer*sizeof(float));
-	n->neuronValues=(float*)malloc(inputNeurons+(layers-1)*neuronsInLayer*sizeof(float));
+	n->neuronWeights=(float*)malloc(0);
+	n->neuronValues=(float*)malloc(0);
+	n->connections=(u_long*)malloc(0);
 	n->connectionNum=0;
 	n->neuronNum=0;
-	n->connections=(u_long*)malloc(0);
 	srand(std::chrono::microseconds(std::chrono::system_clock::now().time_since_epoch()).count());//time since epoch as random seed
 	for(int i=0;i<inputNeurons;i++){
 		addNeuron(n,0,1);
@@ -36,7 +36,7 @@ network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutati
 	}
 	for(int layer=1;layer<layers;layer++){//initializing arrays
 		for(int i=0;i<neuronsInLayer;i++){
-			addNeuron(n,layer,1);
+			addNeuron(n,layer,rand()%20/10*((rand()%2-1)|1));
 			if(layer>1){
 				addConnection(n,createConnection(i,layer-1,i,layer));
 			}
@@ -91,10 +91,22 @@ u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_i
 	return ans;		
 }
 float eval(network* n, Position pos){
+	/*
+	 * Feeds the bitboard positions into the network
+	 * add feeding of all bitboards, subtraction of opposite color value
+	 *
+	 */
+	
 	float ans;
 	u_long temp;
-	std::bitset<64> x(pos.pawns(Color::WHITE));
-	std::cout<<x;
+	std::bitset<64*2> input;
+	Color side=pos.side_to_move(), opposite=opposite_color(side);
+	input|=pos.pawns(side);
+	input<<64;
+	input|=pos.pawns(opposite);	
+	for(int i=0;i<n->layerNeuronCount[0];i++){
+		*neuronAddressLocator(n,0,i,true)=input[i];
+	}
 	for(int i=0;i<n->connectionNum;i++){
 		temp=n->connections[i];
 		*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,true)+=*neuronAddressLocator(n,temp>>32&0xF,temp>>36,true)*(*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,false));
@@ -134,7 +146,7 @@ network* reproduce(network* n1,network* n2){
 	children[0]=*init(n1,true);
 	children[1]=*init(n2,true);
 	children[2]=*init(n1,false);
-	children[3]=*init(n1,false);
+	children[3]=*init(n2,false);
 	for(int layer=0;layer<n1->layers;layer++){//only works if both networks have same amount of layers
 		layerNeuron=0;
 		children[0].layerNeuronCount[layer]=0;
@@ -205,13 +217,12 @@ network* reproduce(network* n1,network* n2){
 		}
 	}
 	//add remaining connections
-	//using paramMutationRate because i am too lazy to add another mutation parameter
-	mutate(&children[0]);
-	mutate(&children[1]);
-	int temp=rand()%20;
+	mutate(children);
+	mutate(children+1);
+	int temp=rand()%10+10;//amount of times to mutate child 2 and 3	
 	for(int i=0;i<temp;i++){
-		mutate(&children[2]);
-		mutate(&children[3]);
+		mutate(children+2);
+		mutate(children+3);
 	}	
 	return children;
 }
@@ -231,7 +242,7 @@ void mutate(network* n){
 	*/
 	//addNeuron(n,1,1);
 }
-void addNeuron(network* n, int layer, float weight){
+void addNeuron(network* n, int layer, float weight){//memory managment could be a little off?
 	/* increase value of layerNeuronCount and neuronNum
 	 * reallocate memory for weights and values
 	 * find new pointer of insertion point, memmove up by one
@@ -239,27 +250,27 @@ void addNeuron(network* n, int layer, float weight){
 	 */
 	
 	n->neuronNum++;
-	n->neuronWeights=(float*)realloc(n->neuronWeights,sizeof(float)*n->neuronNum);
-	n->neuronValues=(float*)realloc(n->neuronValues,sizeof(float)*n->neuronNum);
+	n->neuronWeights=(float*)realloc(n->neuronWeights,sizeof(float)*(n->neuronNum+1));
+	n->neuronValues=(float*)realloc(n->neuronValues,sizeof(float)*(n->neuronNum+1));
 	float* temp=neuronAddressLocator(n,layer,n->layerNeuronCount[layer],true);
-	memmove((void*)(temp+1),(void*)(temp),n->neuronValues+n->neuronNum-temp);
+	memmove((void*)(temp+1),(void*)(temp),((n->neuronValues+n->neuronNum)-temp)*sizeof(float));
 	*temp=0;
 	temp=neuronAddressLocator(n,layer,n->layerNeuronCount[layer],false);
-	memmove((void*)(temp+1),(void*)(temp),n->neuronWeights+n->neuronNum-temp);
+	memmove((void*)(temp+1),(void*)(temp),((n->neuronWeights+n->neuronNum)-temp)*sizeof(float));
 	*temp=weight;
 	n->layerNeuronCount[layer]++;
-}//create similar addConnection function, possibly replacing createConnection
+}
 void addConnection(network* n, u_long connection){
 	n->connectionNum++;
 	n->connections=(u_long*)realloc(n->connections,sizeof(u_long)*n->connectionNum);
 	n->connections[n->connectionNum-1]=connection;
-}//this also forces a slight change to the initial connection creations
-void removeNeuron(network* n, int layer, int relativeAddress){
+}
+void removeNeuron(network* n, int layer, int relativeAddress){//probably buggy, improper memory managment
 	n->neuronNum--;
 	float* temp=neuronAddressLocator(n,layer,relativeAddress,true);
-	memmove((void*)temp,(void*)(temp-1),n->neuronValues+n->neuronNum-temp);
+	memmove((void*)temp,(void*)(temp-1),((n->neuronValues+n->neuronNum)-temp)*sizeof(float));
 	temp=neuronAddressLocator(n,layer,relativeAddress,false);
-	memmove((void*)temp,(void*)(temp-1),n->neuronWeights+n->neuronNum-temp);
+	memmove((void*)temp,(void*)(temp-1),((n->neuronWeights+n->neuronNum)-temp)*sizeof(float));
 	n->neuronWeights=(float*)realloc(n->neuronWeights,sizeof(float)*n->neuronNum);
 	n->neuronValues=(float*)realloc(n->neuronValues,sizeof(float)*n->neuronNum);
 	n->layerNeuronCount[layer]--;
@@ -305,13 +316,15 @@ float similiarity(network* n1,network* n2){
 	return ans;
 }
 void test(){
-	network* n1=init(5,50,10,0.5,0.5,1,0.1, 10);
-	network* n2=init(5,50,20,0.5,0.5,1,0.1, 10);
+	//try to get a verbose reading of network, make sure all functions work without memory crashes
+	//next steps, double check neuron weights, make sure they can be negative
+	//write mutation function
+	//finish eval function, add all bitboards to the input
+	network* n1=init(5,128,10,0.5,0.5,1,0.1,10);
+	network* n2=init(5,128,20,0.5,0.5,1,0.1,10);
 	network* children=reproduce(n1,n2);
-	printInfo(&children[0],false);
-	printInfo(&children[1],false);
-	printInfo(&children[2],false);
-	printInfo(&children[3],false);
-	std::cout<<eval(n1,Position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"))<<"\n";
+	for(int i=0;i<4;i++){
+		std::cout<<eval(children+i,Position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"))<<"\n";
+	}
 }
 }

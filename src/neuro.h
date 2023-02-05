@@ -18,7 +18,7 @@ namespace neuro{
 	network* init(network* original);//clone network to new pointer
 	network* init(std::string file);//load network from file
 	std::string serialize(network* n);//writes network data to a file, returns name of file
-	float eval(network n, Position pos);//runs bitboards through network
+	float eval(network* n, Position pos);//runs bitboards through network
 	network* reproduce(network n1, network n2);//returns 4 children, 2 mutated inverse crossover children, 1 mutated n1, 1 mutated n2  
 	void mutate(network* n);//inplace mutation function, uses networks own mutation hyperparameters
 	void addNeuron(network* n, int layer, float weight);
