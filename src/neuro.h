@@ -1,5 +1,5 @@
 #include "position.h"
-
+#include <random>
 #ifndef NEURO_H
 #define NEURO_H
 
@@ -13,6 +13,7 @@ namespace neuro{
 		u_long* connections;//64 bit data type, 28 bits for id, 4 bits for layer number, 32 for input 32 for output
 	};
 	
+	std::minstd_rand0 ran;
 	u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer);
 	network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutationRate,float connectionMutationRate,float neuronMutationStrength,float paramMutationRate, int preMutationAmount);//network generation from scratch 
 	network* init(network* original);//clone network to new pointer
