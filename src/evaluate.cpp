@@ -30,6 +30,7 @@
 #include "scale.h"
 #include "thread.h"
 #include "ucioption.h"
+#include "neuro.h"
 
 
 ////
@@ -298,8 +299,8 @@ Value evaluate(const Position &pos, EvalInfo &ei, int threadID) {
   assert(pos.is_ok());
   assert(threadID >= 0 && threadID < THREAD_MAX);
 
-  //insert custom eval here
-  
+  //insert custom eval here 
+  return value_from_centipawns((int)neuro::eval(neuro::current,pos));
   stm = pos.side_to_move();
 
   // Initialize by reading the incrementally updated scores included in the

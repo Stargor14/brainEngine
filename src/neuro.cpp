@@ -6,8 +6,8 @@
 #include <vector>
 #include <string>
 #include <cmath>
-#include <random>
 namespace neuro{
+network* current;
 float randf(bool neg){//generates pseudo random number from 0 to 1 or -1 to 1
 	if(neg)return ((rand()%1000)/1000.0) * ((rand())%3-1);
 	return ((rand()%1000)/1000.0); 
@@ -145,83 +145,11 @@ float eval(network* n, Position pos){
 	insertValue(n,&counter,pos.is_draw());
 	insertValue(n,&counter,pos.has_mate_threat(side));
 	insertValue(n,&counter,pos.has_mate_threat(opposite));
-	//8
+	//8 -> 906 total
 	for(int i=0;i<64;i++){
 		insertValue(n,&counter,pos.square_is_attacked((Square)i,side));		
 		insertValue(n,&counter,pos.square_is_attacked((Square)i,opposite));		
 	}
-	//64*2
-	/*
-	input<<64;
-	input|=pos.pawns(opposite);	
-	input<<64;
-	counter+=64;
-	input|=pos.knights(side);
-	input<<64;
-	counter+=64;
-	input|=pos.knights(opposite);	
-	input<<64;
-	counter+=64;
-	input|=pos.rooks(side);
-	input<<64;
-	counter+=64;
-	input|=pos.rooks(opposite);	
-	input<<64;
-	counter+=64;
-	input|=pos.bishops(side);
-	input<<64;
-	counter+=64;
-	input|=pos.bishops(opposite);	
-	input<<64;
-	counter+=64;
-	input|=pos.queens(side);
-	input<<64;
-	counter+=64;
-	input|=pos.queens(opposite);	
-	input<<64;
-	counter+=64;
-	input|=pos.kings(side);
-	input<<64;
-	counter+=64;
-	input|=pos.kings(opposite);	
-	input<<1;
-	counter++;
-	input|=pos.can_castle_kingside(side);
-	input<<1;
-	counter++;
-	input|=pos.can_castle_kingside(opposite);
-	input<<1;
-	counter++;
-	input|=pos.can_castle_queenside(side);
-	input<<1;
-	counter++;
-	input|=pos.can_castle_queenside(opposite);
-	input<<1;
-	counter++;
-	input|=pos.is_mate();
-	input<<1;
-	counter++;
-	input|=pos.is_draw();
-	input<<1;
-	counter++;
-	input|=pos.has_mate_threat(side);
-	input<<1;
-	counter++;
-	input|=pos.has_mate_threat(opposite);
-	for(int i=0;i<64;i++){
-		input<<1;
-		counter++;
-		pos.square_is_attacked((Square)i,side);		
-	}
-	for(int i=0;i<64;i++){
-		input<<1;
-		pos.square_is_attacked((Square)i,opposite);		
-	}
-	std::cout<<input<<'\n';
-	for(int i=0;i<n->layerNeuronCount[0];i++){
-		*neuronAddressLocator(n,0,i,true)=input[i]*(*neuronAddressLocator(n,0,i,false));
-	}
-	*/
 	for(int i=0;i<n->connectionNum;i++){
 		temp=n->connections[i];
 	//	std::cout<<"to_layer: "<<(n->connections[i]&0xF)<<"to_address: "<<((n->connections[i]>>4)&0xFFFFFFF)<<'\n';
@@ -233,8 +161,8 @@ float eval(network* n, Position pos){
 		ans+=*neuronAddressLocator(n,n->layers-1,i,true);
 //		std::cout<<"adding "<<*neuronAddressLocator(n,n->layers-1,i,true)<<'\n';
 	}
-//	std::cout<<"counter: "<<counter<<'\n';
-	return ans;
+	std::cout<<"info 0 score: "<<ans/1000<<'\n';
+	return ans/1000;
 }
 network* reproduce(network* n1,network* n2){
 	/*
@@ -393,7 +321,7 @@ void mutate(network* n){
 			addConnection(n,createConnection(from_address,from_layer,to_address,to_layer));//new random
 		}
 		if(randf(false)<n->connectionMutationRate){
-			removeConnection(n,n->connections+i);
+			//removeConnection(n,n->connections+i);
 		}
 		if(!validConnection(n,n->connections[i])){
 			removeConnection(n,n->connections+i);
@@ -479,14 +407,21 @@ void test(){
 	//make random weight generation functional
 	Position startPos=Position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	srand(std::chrono::system_clock::now().time_since_epoch().count());//time since epoch as random seed
-	network* n1=init(4,904,50,0.07,0.07,5,0.1,50);
-	network* n2=init(4,904,50,0.1,0.1,5,0.1,10);
+	network* n1=init(4,904,150,0.01,0.01,2,0.1,5);
+	network* n2=init(4,904,50,0.01,0.01,3,0.1,10);
 	network* children=reproduce(n1,n2);
-	clear(n1);
-	printInfo(n1,true);
 	for(int i=0;i<4;i++){
-		std::cout<<eval(n1,startPos)<<"\n";
-		clear(n1);
+		std::cout<<eval(children+i,startPos)<<"\n";
+		clear(children+i);
 	}
+	printInfo(children+1,false);
 }
+std::string serialize(network* n){
+	std::string ans;
+  	
+	return ans; 	
 }
+//write fitness testing function
+//using super basic evaluation strategy, evaluate both sides, see who is "winning"
+//most accutrate networks pass through
+};

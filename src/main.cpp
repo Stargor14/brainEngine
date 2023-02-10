@@ -38,6 +38,7 @@
 #include "thread.h"
 #include "uci.h"
 #include "ucioption.h"
+#include "fitness.h"
 #include "neuro.h"
 
 //// 
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
   init_bitbases();
   init_threads();
 
-  neuro::test();
+  //neuro::test();
 
   // Make random number generation less deterministic, for book moves
   int i = abs(get_system_time() % 10000);
@@ -88,6 +89,7 @@ int main(int argc, char *argv[]) {
   std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"
             << std::endl;
 
+  neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);
   // Enter UCI mode
   uci_main_loop();
 

@@ -35,7 +35,6 @@
 #include "uci.h"
 #include "ucioption.h"
 
-
 ////
 //// Local definitions:
 ////

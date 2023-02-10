@@ -1,8 +1,8 @@
-#include "position.h"
-#include <random>
 #ifndef NEURO_H
 #define NEURO_H
 
+#include "color.h"
+#include "position.h"
 namespace neuro{
 	struct network{
 		float neuronMutationRate,connectionMutationRate,neuronMutationStrength,paramMutationRate;
@@ -12,8 +12,7 @@ namespace neuro{
 		float* neuronValues;
 		u_long* connections;//64 bit data type, 28 bits for id, 4 bits for layer number, 32 for input 32 for output
 	};
-	
-	std::minstd_rand0 ran;
+	extern network* current;	
 	u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer);
 	network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutationRate,float connectionMutationRate,float neuronMutationStrength,float paramMutationRate, int preMutationAmount);//network generation from scratch 
 	network* init(network* original);//clone network to new pointer
@@ -30,5 +29,5 @@ namespace neuro{
 	float* neuronAddressLocator(network* n, int layer, int relativeAddress, bool value);
 	void printInfo(network* n);
 	void test();//test all functions	
-}
+};
 #endif
