@@ -16,13 +16,13 @@ void generateFile(const char* path){
 				continue;
 			}
 			if(line[0]=='['){
-				if(line=="[Result 1/2-1/2]"){
+				if(line=="[Result \"1/2-1/2\"]"){
 					currScore=0;
 				}
-				if(line=="[Result 1-0]"){
+				if(line=="[Result \"1-0\"]"){
 					currScore=1;
 				}
-				if(line=="[Result 0-1]"){
+				if(line=="[Result \"0-1\"]"){
 					currScore=-1;
 				}
 				continue;
@@ -30,6 +30,7 @@ void generateFile(const char* path){
 			else{
 				temp=to_string(currScore)+":"+line+"\n";
 				fwrite(temp.c_str(),sizeof(char),temp.length(),out);
+				std::cout<<temp;
 			}
    		}
    		file.close();
@@ -37,9 +38,11 @@ void generateFile(const char* path){
 }
 void startSelection(const char* file){
 }
-void startEvaluation(neuro::network* network, const char* path){
+void startEvaluation(const char* netPath,const char* evalPath){
+	neuro::network* n=neuro::init(netPath);
+	for(){
+	}
 }
-//system("./carnoaEngine evolve");	
-//pgn-extract -Wfen --selectonly 1:100 --output test.f database.pgn
+//pgn-extract -Wfen --selectonly 1:100 --output test database.pgn
 }
 

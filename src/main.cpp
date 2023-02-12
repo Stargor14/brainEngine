@@ -83,8 +83,7 @@ int main(int argc, char *argv[]) {
  	if(!strcmp(argv[1],"evaluate")||!strcmp(argv[1],"-e")){//start fitness evaluation of a single network
 		if(argc>3){
 			if(std::string(argv[2]).find(".network") != std::string::npos&&std::string(argv[3]).find(".eval") != std::string::npos){//providing .selection file of network files for continued selection
-  				neuro::current=neuro::init(argv[2]);//second argument path to network file
-				fitness::startEvaluation(neuro::current,argv[3]);//third arguemnt path to evaluation file
+				fitness::startEvaluation(argv[2],argv[3]);//third arguemnt path to evaluation file
 			}
 		}
 		else if(argc==3){

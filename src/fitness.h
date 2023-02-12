@@ -26,7 +26,7 @@ void startEngine(const char*);
 void generateFile(const char* file);//generate custom file for use by network fitness evaluation function
 void startSelection(const char* file);//method for selection when a selection file is provided
 void startSelection(int networks, const char* file);//overloaded method for brand new selection if no file is provided
-void startEvaluation(network* network, const char* path);//evaluates a single network, writes its result to a file
+void startEvaluation(const char* netPath, const char* evalPath);//evaluates a single network, writes its result to a file
 //command line arguments for running uci mode, evalution mode, etc.
 }
 #endif
