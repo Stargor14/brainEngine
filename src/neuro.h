@@ -15,9 +15,9 @@ namespace neuro{
 	extern network* current;	
 	u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer);
 	network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutationRate,float connectionMutationRate,float neuronMutationStrength,float paramMutationRate, int preMutationAmount);//network generation from scratch 
-	network* init(network* original);//clone network to new pointer
-	network* init(std::string file);//load network from file
-	std::string serialize(network* n);//writes network data to a file, returns name of file
+	network* init(network* original,bool blank);//clone network to new pointer
+	network* init(const char* file);//load network from file
+	void serialize(network* n,const char* file);//writes network data to a file, returns name of file
 	float eval(network* n, Position pos);//runs bitboards through network
 	network* reproduce(network n1, network n2);//returns 4 children, 2 mutated inverse crossover children, 1 mutated n1, 1 mutated n2  
 	void mutate(network* n);//inplace mutation function, uses networks own mutation hyperparameters
@@ -27,7 +27,7 @@ namespace neuro{
 	void removeConnection(network* n, u_long* loc);
 	void removeNeuron(network* n, int layer, int relativeAddress);
 	float* neuronAddressLocator(network* n, int layer, int relativeAddress, bool value);
-	void printInfo(network* n);
+	void printInfo(network* n,bool verbose);
 	void test();//test all functions	
 };
 #endif

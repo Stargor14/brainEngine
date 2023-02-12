@@ -29,6 +29,7 @@ network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutati
 	 *	paramMutationRate, how often the mutation rates will mutate (including itself)
 	 *	preMutationAmount, how many times to run mutation function after generation
 	 */
+	srand(std::chrono::system_clock::now().time_since_epoch().count());//time since epoch as random seed
 	network* n=(network*)malloc(sizeof(network));
 	n->neuronMutationRate=neuronMutationRate;
 	n->connectionMutationRate=connectionMutationRate;
@@ -83,11 +84,31 @@ network* init(network* original,bool blank){
 		memcpy((void*)n->neuronWeights,original->neuronWeights,sizeof(float)*n->neuronNum);
 		memcpy((void*)n->neuronValues,original->neuronValues,sizeof(float)*n->neuronNum);
 		memcpy((void*)n->connections,original->connections,sizeof(long)*n->connectionNum);	
-	}
+	}//if blank, network memory is allocated but not assigned with the values of the original network
+	 //used for reproduction
 	return n;
 }
-network* init(std::string file){
+network* init(const char* file){
 	network* n=(network*)malloc(sizeof(network));	
+	FILE* f;
+	f=fopen(file,"rb");
+	fread(&n->neuronMutationRate,sizeof(float),1,f);
+	fread(&n->connectionMutationRate,sizeof(float),1,f);
+	fread(&n->neuronMutationStrength,sizeof(float),1,f);
+	fread(&n->paramMutationRate,sizeof(float),1,f);
+	fread(&n->layers,sizeof(int),1,f);
+	fread(&n->neuronNum,sizeof(int),1,f);
+	fread(&n->connectionNum,sizeof(int),1,f);
+	n->layerNeuronCount=(int*)malloc(sizeof(int)*n->layers);//allocate memory for the neurons and connections 
+	n->neuronWeights=(float*)malloc(sizeof(float)*n->neuronNum);//allocate memory for the neurons and connections 
+	n->neuronValues=(float*)malloc(sizeof(float)*n->neuronNum);//allocate memory for the neurons and connections 
+	n->connections=(u_long*)malloc(sizeof(long)*n->connectionNum);//allocate memory for the neurons and connections 
+	fread(n->layerNeuronCount,sizeof(int),n->layers,f);
+	fread(n->neuronWeights,sizeof(float),n->neuronNum,f);
+	//neuronValues not required, since they are always initialized at 0
+	fread(n->connections,sizeof(long),n->connectionNum,f);
+	fclose(f);
+	clear(n);//make sure the neuronValues are set at 0, might be redundant?
 	return n;	
 }
 u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer){
@@ -161,8 +182,9 @@ float eval(network* n, Position pos){
 		ans+=*neuronAddressLocator(n,n->layers-1,i,true);
 //		std::cout<<"adding "<<*neuronAddressLocator(n,n->layers-1,i,true)<<'\n';
 	}
-	std::cout<<"info 0 score: "<<ans/1000<<'\n';
-	return ans/1000;
+	std::cout<<"info 0 score: "<<ans<<'\n';
+	clear(n);
+	return ans;
 }
 network* reproduce(network* n1,network* n2){
 	/*
@@ -387,7 +409,7 @@ void printInfo(network* n, bool verbose){
 		}
 	}
 
-	if(false){//no longer needed for now	
+	if(verbose){//no longer needed for now	
 	for(int i=0;i<n->connectionNum;i++){
 		std::cout<<"connection "<<i<<" "<<"to_layer: "<<(n->connections[i]&0xF)<<'\n';
 		std::cout<<"connection "<<i<<" "<<"to_address: "<<((n->connections[i]>>4)&0xFFFFFFF)<<'\n';
@@ -416,10 +438,26 @@ void test(){
 	}
 	printInfo(children+1,false);
 }
-std::string serialize(network* n){
-	std::string ans;
-  	
-	return ans; 	
+void serialize(network* n,const char* file){
+  	FILE* f;
+	f=fopen(file,"wb+");
+	fwrite(&n->neuronMutationRate,sizeof(float),1,f);
+	fwrite(&n->connectionMutationRate,sizeof(float),1,f);
+	fwrite(&n->neuronMutationStrength,sizeof(float),1,f);
+	fwrite(&n->paramMutationRate,sizeof(float),1,f);
+	fwrite(&n->layers,sizeof(int),1,f);
+	fwrite(&n->neuronNum,sizeof(int),1,f);
+	fwrite(&n->connectionNum,sizeof(int),1,f);
+	fwrite(n->layerNeuronCount,sizeof(int),n->layers,f);
+	fwrite(n->neuronWeights,sizeof(float),n->neuronNum,f);
+	//neuronValues no required, since they are always initialized at 0
+	fwrite(n->connections,sizeof(long),n->connectionNum,f);
+	fclose(f);
+
+	//for each bit in a value, bitshift right than &1 the value to get the bit that is going to be copied
+	//then copy the last bit (whole number) into a bitset
+	//to deserialize, do the same thing but backwards (<<= and |=) 	
+	//
 }
 //write fitness testing function
 //using super basic evaluation strategy, evaluate both sides, see who is "winning"

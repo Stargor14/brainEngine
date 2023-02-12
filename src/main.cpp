@@ -73,25 +73,50 @@ int main(int argc, char *argv[]) {
   for(int j = 0; j < i; j++)
     genrand_int32();
 
-  // Process command line arguments
-  if(argc >= 2) {
-    if(std::string(argv[1]) == "bench") {
-      if(argc != 4) {
-        std::cout << "Usage: glaurung bench <hash> <threads>" << std::endl;
-        exit(0);
-      }
-      benchmark(std::string(argv[2]), std::string(argv[3]));
-      return 0;
-    }
-  }
 
   // Print copyright notice
   std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"
             << std::endl;
 
-  neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);
-  // Enter UCI mode
-  uci_main_loop();
-
+  //selecting mode to run in with command linearguments
+  if(argc>1){
+ 	if(!strcmp(argv[1],"evaluate")||!strcmp(argv[1],"-e")){//start fitness evaluation of a single network
+		if(argc>3){
+			if(std::string(argv[2]).find(".network") != std::string::npos&&std::string(argv[3]).find(".eval") != std::string::npos){//providing .selection file of network files for continued selection
+  				neuro::current=neuro::init(argv[2]);//second argument path to network file
+				fitness::startEvaluation(neuro::current,argv[3]);//third arguemnt path to evaluation file
+			}
+		}
+		else if(argc==3){
+			std::cout<<"please provide a valid positional info file\n";//if no eval file or network file provided
+		}
+	}
+	else if(!strcmp(argv[1],"selection")|| !strcmp(argv[1],"sof")||!strcmp(argv[1],"-s")){
+		if(std::string(argv[2]).find(".selection") != std::string::npos){
+			fitness::startSelection(argv[2]);//resume selection from .selection file	
+		}
+		else if(std::string(argv[2]).find(".eval") != std::string::npos){
+			fitness::startSelection(argv[2]);//start a new selection from scratch, using provided evaluation file	
+		}
+		else{
+			std::cout<<"please provide a selction file, or an eval file and the number of networks in each generation\n";
+		}
+	}
+	else if(!strcmp(argv[1],"uci")||!strcmp(argv[1],"-u")){
+		if(std::string(argv[2]).find(".network") != std::string::npos){
+			//add uci mode?
+		}
+	}
+	else if(!strcmp(argv[1],"generate")||!strcmp(argv[1],"-g")){
+		fitness::generateFile(argv[2]);	
+	}
+	else{
+		std::cout<<"no valid argument provided, run with -h or help\n";
+	}
+  }
+  else{//if no argument is provided
+  	neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);//instead of blank network, use a specific .network file
+  	uci_main_loop();
+  }
   return 0;
 }
