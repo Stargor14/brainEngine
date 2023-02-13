@@ -7,3 +7,6 @@ database.pgn
 **.o
 test
 **.eval
+**.result
+**.network
+**.selection

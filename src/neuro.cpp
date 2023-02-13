@@ -8,6 +8,7 @@
 #include <cmath>
 namespace neuro{
 network* current;
+int inputNum=904;
 float randf(bool neg){//generates pseudo random number from 0 to 1 or -1 to 1
 	if(neg)return ((rand()%1000)/1000.0) * ((rand())%3-1);
 	return ((rand()%1000)/1000.0); 
@@ -133,6 +134,9 @@ void insertValue(network* n, int* add, bool b){
 	*neuronAddressLocator(n,0,*add,true)=(int)b*(*neuronAddressLocator(n,0,*add,false));	
 	*add++;
 }
+float eval(network* n, std::string pos){
+	return eval(n,Position(pos));
+}
 float eval(network* n, Position pos){
 	/*
 	 * Feeds the bitboard positions into the network
@@ -182,7 +186,7 @@ float eval(network* n, Position pos){
 		ans+=*neuronAddressLocator(n,n->layers-1,i,true);
 //		std::cout<<"adding "<<*neuronAddressLocator(n,n->layers-1,i,true)<<'\n';
 	}
-	std::cout<<"info 0 score: "<<ans<<'\n';
+	//std::cout<<"info 0 score: "<<ans<<'\n';
 	clear(n);
 	return ans;
 }
@@ -343,7 +347,7 @@ void mutate(network* n){
 			addConnection(n,createConnection(from_address,from_layer,to_address,to_layer));//new random
 		}
 		if(randf(false)<n->connectionMutationRate){
-			//removeConnection(n,n->connections+i);
+			removeConnection(n,n->connections+i);
 		}
 		if(!validConnection(n,n->connections[i])){
 			removeConnection(n,n->connections+i);

@@ -75,8 +75,6 @@ int main(int argc, char *argv[]) {
 
 
   // Print copyright notice
-  std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"
-            << std::endl;
 
   //selecting mode to run in with command linearguments
   if(argc>1){
@@ -90,15 +88,15 @@ int main(int argc, char *argv[]) {
 			std::cout<<"please provide a valid positional info file\n";//if no eval file or network file provided
 		}
 	}
-	else if(!strcmp(argv[1],"selection")|| !strcmp(argv[1],"sof")||!strcmp(argv[1],"-s")){
+	else if(std::string(argv[1]).find("selection")!=std::string::npos|| std::string(argv[1]).find("sof")!=std::string::npos||std::string(argv[1]).find("-s")!=std::string::npos){
 		if(std::string(argv[2]).find(".selection") != std::string::npos){
 			fitness::startSelection(argv[2]);//resume selection from .selection file	
 		}
-		else if(std::string(argv[2]).find(".eval") != std::string::npos){
-			fitness::startSelection(argv[2]);//start a new selection from scratch, using provided evaluation file	
+		else if(std::string(argv[3]).find(".eval") != std::string::npos){
+			fitness::startSelection(atoi(argv[4]),atoi(argv[5]),argv[2],argv[3]);//start a new selection from scratch, using provided evaluation file	
 		}
 		else{
-			std::cout<<"please provide a selction file, or an eval file and the number of networks in each generation\n";
+			std::cout<<"please provide a selection file, or name for new selection file, name of eval file, the number of networks in each generation, and the number of generations to run selection for\n";
 		}
 	}
 	else if(!strcmp(argv[1],"uci")||!strcmp(argv[1],"-u")){
@@ -109,12 +107,19 @@ int main(int argc, char *argv[]) {
 	else if(!strcmp(argv[1],"generate")||!strcmp(argv[1],"-g")){
 		fitness::generateFile(argv[2]);	
 	}
+	else if(std::string(argv[1]).find("info")!=std::string::npos){
+		
+		neuro::printInfo(neuro::init(argv[2]),true);
+
+	}
 	else{
 		std::cout<<"no valid argument provided, run with -h or help\n";
 	}
   }
   else{//if no argument is provided
-  	neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);//instead of blank network, use a specific .network file
+  	std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"<< std::endl;
+//  	neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);//instead of blank network, use a specific .network file
+	neuro::current=neuro::init("6.network");
   	uci_main_loop();
   }
   return 0;
