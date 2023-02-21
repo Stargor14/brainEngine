@@ -481,6 +481,7 @@ Value quick_evaluate(const Position &pos) {
   
   assert(pos.is_ok());
 
+  return value_from_centipawns((int)neuro::eval(neuro::current,pos));
   stm = pos.side_to_move();
 
   mgValue = pos.mg_value();

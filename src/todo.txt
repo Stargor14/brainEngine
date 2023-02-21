@@ -1,2 +1,6 @@
 add param mutation to mutation function
+create a better ranking/fitness evaluating system, promote advancements that may not immediatley lead to improved scores
+rewrite .selection file creation to not write every number to the file
+just write the number of networks in the selection
 
+same network will eval differently in two different generations despite using same dataset,please test

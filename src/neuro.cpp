@@ -109,7 +109,7 @@ network* init(const char* file){
 	//neuronValues not required, since they are always initialized at 0
 	fread(n->connections,sizeof(long),n->connectionNum,f);
 	fclose(f);
-	clear(n);//make sure the neuronValues are set at 0, might be redundant?
+//	clear(n);//make sure the neuronValues are set at 0, might be redundant?
 	return n;	
 }
 u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer){
@@ -135,7 +135,8 @@ void insertValue(network* n, int* add, bool b){
 	*add++;
 }
 float eval(network* n, std::string pos){
-	return eval(n,Position(pos));
+	if(Position(pos).side_to_move()==Color::WHITE)return eval(n,Position(pos));
+	else{return -eval(n,Position(pos));}
 }
 float eval(network* n, Position pos){
 	/*
@@ -180,7 +181,7 @@ float eval(network* n, Position pos){
 	//	std::cout<<"to_layer: "<<(n->connections[i]&0xF)<<"to_address: "<<((n->connections[i]>>4)&0xFFFFFFF)<<'\n';
 	//	std::cout<<"from_layer: "<<((n->connections[i]>>32)&0xF)<<"from_address: "<<((n->connections[i]>>36))<<'\n'<<'\n';
 	
-		*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,true)+=*neuronAddressLocator(n,temp>>32&0xF,temp>>36,true)*(*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,false));
+		*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,true)+=fmax(0,*neuronAddressLocator(n,temp>>32&0xF,temp>>36,true))*(*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,false));
 	}
 	for(int i=0;i<n->layerNeuronCount[n->layers-1];i++){
 		ans+=*neuronAddressLocator(n,n->layers-1,i,true);
@@ -188,7 +189,8 @@ float eval(network* n, Position pos){
 	}
 	//std::cout<<"info 0 score: "<<ans<<'\n';
 	clear(n);
-	return ans;
+	if(pos.side_to_move()==Color::WHITE)return ans;
+	else{return -ans;}
 }
 network* reproduce(network* n1,network* n2){
 	/*
