@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   else{//if no argument is provided
   	std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"<< std::endl;
 //  	neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);//instead of blank network, use a specific .network file
-	neuro::current=neuro::init("0.network");
+	neuro::current=neuro::init("best.network");
   	uci_main_loop();
   }
   return 0;

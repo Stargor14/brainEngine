@@ -8,7 +8,8 @@
 #include <cmath>
 namespace neuro{
 network* current;
-int inputNum=904;
+int inputNum=904,currID=0;
+std::string version="0.1";
 float randf(bool neg){//generates pseudo random number from 0 to 1 or -1 to 1
 	if(neg)return ((rand()%1000)/1000.0) * ((rand())%3-1);
 	return ((rand()%1000)/1000.0); 
@@ -43,6 +44,7 @@ network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutati
 	n->connections=(u_long*)malloc(1);
 	n->connectionNum=0;
 	n->neuronNum=0;
+	n->id=currID++;
 	for(int i=0;i<inputNeurons;i++){
 		addNeuron(n,0,1);
 		addConnection(n,createConnection(i,0,rand()%neuronsInLayer,1));//connects each input neuron to a random neuron in layer 1
@@ -67,6 +69,7 @@ network* init(network* original,bool blank){
 	n->neuronMutationStrength=original->neuronMutationStrength;
 	n->paramMutationRate=original->paramMutationRate;
 	n->layers=original->layers;
+	n->id=currID++;
 	if(!blank){
 		n->neuronNum=original->neuronNum;
 		n->connectionNum=original->connectionNum;
@@ -100,6 +103,7 @@ network* init(const char* file){
 	fread(&n->layers,sizeof(int),1,f);
 	fread(&n->neuronNum,sizeof(int),1,f);
 	fread(&n->connectionNum,sizeof(int),1,f);
+	fread(&n->id,sizeof(int),1,f);
 	n->layerNeuronCount=(int*)malloc(sizeof(int)*n->layers);//allocate memory for the neurons and connections 
 	n->neuronWeights=(float*)malloc(sizeof(float)*n->neuronNum);//allocate memory for the neurons and connections 
 	n->neuronValues=(float*)malloc(sizeof(float)*n->neuronNum);//allocate memory for the neurons and connections 
@@ -294,7 +298,7 @@ network* reproduce(network* n1,network* n2){
 	//add remaining connections
 	mutate(children);
 	mutate(children+1);
-	int temp=rand()%10+10;//amount of times to mutate child 2 and 3	
+	int temp=rand()%30+10;//amount of times to mutate child 2 and 3	
 	for(int i=0;i<temp;i++){
 		mutate(children+2);
 		mutate(children+3);
@@ -454,6 +458,7 @@ void serialize(network* n,const char* file){
 	fwrite(&n->layers,sizeof(int),1,f);
 	fwrite(&n->neuronNum,sizeof(int),1,f);
 	fwrite(&n->connectionNum,sizeof(int),1,f);
+	fwrite(&n->id,sizeof(int),1,f);
 	fwrite(n->layerNeuronCount,sizeof(int),n->layers,f);
 	fwrite(n->neuronWeights,sizeof(float),n->neuronNum,f);
 	//neuronValues no required, since they are always initialized at 0

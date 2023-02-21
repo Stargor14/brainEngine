@@ -58,9 +58,9 @@ void startSelection(const char* path){
 	}
 	else return;
 	int* scores=(int*)malloc(sizeof(int)*population); 
-	int* networks=(int*)malloc(sizeof(int)*population);
+	neuro::network* networks=(neuro::network*)malloc(sizeof(neuro::network)*population);
 	for(int i=0;i<population;i++){
-		networks[i]=i;
+		networks[i]=*neuro::init(to_string(i).append(".network").c_str());
 	}
 	cout<<"population: "<<population;
 	while(gen<maxGen){
@@ -87,37 +87,39 @@ void startSelection(const char* path){
 			//record success rate
 		}
 		cout<<"\n";
+		for(int i=0;i<population;i++){
+			cout<<"network"<<networks[i].id<<" score: "<<scores[i]<<'\n';
+		}
 		//order success rate of networks
 		//cout<<"started ordering\n";
+
 		for(int i=0;i<population-1;i++){
 			for(int j=0;j<population-1;j++){
 				if(scores[j]<scores[j+1]){
-					int temp=scores[j],stemp=networks[j];
+					int temp=scores[j];
+					neuro::network stemp=networks[j];
 					scores[j]=scores[j+1];
 					networks[j]=networks[j+1];
 					scores[j+1]=temp;
 					networks[j+1]=stemp;
 				}
 			}
-		}	
-		for(int i=0;i<population;i++){
-			cout<<scores[i]<<" "<<networks[i]<<".network "<<neuro::init(to_string(networks[i]).append(".network").c_str())->connectionNum<<'\n';
 		}
 		cout<<'\n';
 		//rewrite all networks in their new order
-		/*
+		
+		neuro::serialize(networks,"best.network");	
+		children=neuro::reproduce(networks,networks+1);
+		networks[population-4]=children[0];
+		networks[population-3]=children[1];
+		networks[population-2]=children[2];
+		networks[population-1]=children[3];
+
 		for(int i=0;i<population;i++){
-			neuro::serialize(neuro::init(to_string(networks[i]).append(".network").c_str()),to_string(i).append(".network").c_str());	
+			neuro::serialize(networks+i,to_string(i).append(".network").c_str());	
 		}
-		*/
-		children=neuro::reproduce(neuro::init(to_string(networks[0]).append(".network").c_str()),neuro::init(to_string(networks[1]).append(".network").c_str()));
-		neuro::serialize(children,to_string(networks[population-1]).append(".network").c_str());	
-		neuro::serialize(children+1,to_string(networks[population-2]).append(".network").c_str());	
-		neuro::serialize(children+2,to_string(networks[population-3]).append(".network").c_str());	
-		neuro::serialize(children+3,to_string(networks[population-4]).append(".network").c_str());	
 		//free(children);
 		gen++;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}	
 }
 void startSelection(int networks,int generations,const char* name,const char* file){
@@ -139,8 +141,8 @@ void startSelection(int networks,int generations,const char* name,const char* fi
 	startSelection(std::string(name).append(".selection").c_str());
 }
 int roundScore(float in){
-	if(in>0)return 1;
-	if(in<0)return -1;
+	if(in>3)return 1;
+	if(in<-3)return -1;
 	return 0;
 }
 void startEvaluation(const char* netPath,const char* evalPath){

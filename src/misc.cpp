@@ -41,7 +41,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp);
 #include <cstring>
 #include <iomanip>
 #include <sstream>
-
+#include "neuro.h"
 #include "misc.h"
 
 
@@ -55,26 +55,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp);
 /// the constant EngineVersion (defined in misc.h) is empty.
 
 const std::string engine_name() {
-  if(EngineVersion == "") {
-    static const char monthNames[12][4] = {
-      "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
-    };
-    const char *dateString = __DATE__;
-    std::stringstream s;
-    int month = 0, day = 0;
-    
-    for(int i = 0; i < 12; i++)
-      if(strncmp(dateString, monthNames[i], 3) == 0)
-        month = i + 1;
-    day = atoi(dateString+4);
-    
-    s << "CarnosaEngine " << (dateString+9)<<'/' << std::setfill('0') << std::setw(2)
-      << month << '/'<<std::setfill('0') << std::setw(2) << day;
-    
-    return s.str();
-  }
-  else
-    return "CarnosaEngine " + EngineVersion;
+   return "CarnosaEngine "+neuro::version;
 }
 
 

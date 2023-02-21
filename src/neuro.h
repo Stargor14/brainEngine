@@ -6,14 +6,15 @@
 namespace neuro{
 	struct network{
 		float neuronMutationRate,connectionMutationRate,neuronMutationStrength,paramMutationRate;
-		int layers,connectionNum,neuronNum;
+		int layers,connectionNum,neuronNum,id;
 	       	int* layerNeuronCount;//number of neurons per layer, max 2^28  
 		float* neuronWeights;//array of floats for weights and values of each node, maxvalue floatmax
 		float* neuronValues;
 		u_long* connections;//64 bit data type, 28 bits for id, 4 bits for layer number, 32 for input 32 for output
 	};
 	extern network* current;	
-	extern int inputNum;	
+	extern int inputNum,currID;	
+	extern string version;
 	u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer);
 	network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutationRate,float connectionMutationRate,float neuronMutationStrength,float paramMutationRate, int preMutationAmount);//network generation from scratch 
 	network* init(network* original,bool blank);//clone network to new pointer
