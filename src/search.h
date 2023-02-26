@@ -38,7 +38,7 @@
 
 const int PLY_MAX = 100;
 const int PLY_MAX_PLUS_2 = 102;
-
+extern Move BM;
 
 ////
 //// Types

@@ -14,7 +14,7 @@ namespace neuro{
 	};
 	extern network* current;	
 	extern int inputNum,currID;	
-	extern string version;
+	extern std::string version;
 	u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_int toLayer);
 	network* init(int layers,int inputNeurons,int neuronsInLayer, float neuronMutationRate,float connectionMutationRate,float neuronMutationStrength,float paramMutationRate, int preMutationAmount);//network generation from scratch 
 	network* init(network* original,bool blank);//clone network to new pointer

@@ -39,6 +39,7 @@
 #include "thread.h"
 #include "tt.h"
 #include "ucioption.h"
+#include "fitness.h"
 
 
 ////
@@ -52,7 +53,7 @@ namespace {
   // The RootMove class is used for moves at the root at the tree.  For each
   // root move, we store a score, a node count, and a PV (really a refutation
   // in the case of moves which fail low).
-
+	Move BM;
   class RootMove {
 
   public:
@@ -295,7 +296,6 @@ History H;  // Should be made local?
 /// think() is the external interface to Glaurung's search, and is called when
 /// the program receives the UCI 'go' command.  It initializes various
 /// search-related global variables, and calls root_search()
-
 void think(const Position &pos, bool infinite, bool ponder, int time,
            int increment, int movesToGo, int maxDepth, int maxNodes,
            int maxTime, Move searchMoves[]) {
@@ -666,6 +666,7 @@ namespace {
 
     // Print the best move and the ponder move to the standard output:
     std::cout << "bestmove " << ss[0].pv[0];
+    fitness::BestMove=ss[0].pv[0];
     if(ss[0].pv[1] != MOVE_NONE)
       std::cout << " ponder " << ss[0].pv[1];
     std::cout << std::endl;

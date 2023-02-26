@@ -9,10 +9,13 @@
 namespace neuro{
 network* current;
 int inputNum=904,currID=0;
-std::string version="0.1";
+std::string version="1.1";
 float randf(bool neg){//generates pseudo random number from 0 to 1 or -1 to 1
-	if(neg)return ((rand()%1000)/1000.0) * ((rand())%3-1);
-	return ((rand()%1000)/1000.0); 
+	if(neg){
+		if(rand()%2)return ((rand()%100000)/100000.0);
+		else return -((rand()%100000)/100000.0);
+	}
+	return ((rand()%100000)/100000.0); 
 }
 void clear(network* n){
 	for(int layer=0;layer<n->layers;layer++){
@@ -148,7 +151,7 @@ float eval(network* n, Position pos){
 	 * add feeding of all bitboards, subtraction of opposite color value
 	 *
 	 */
-	
+
 	float ans=0;
 	u_long temp;
 	Color side=pos.side_to_move(), opposite=opposite_color(side);
@@ -298,7 +301,7 @@ network* reproduce(network* n1,network* n2){
 	//add remaining connections
 	mutate(children);
 	mutate(children+1);
-	int temp=rand()%30+10;//amount of times to mutate child 2 and 3	
+	int temp=rand()%5;//amount of times to mutate child 2 and 3	
 	for(int i=0;i<temp;i++){
 		mutate(children+2);
 		mutate(children+3);
@@ -331,26 +334,31 @@ void mutate(network* n){
 		addNeuron(n,1,1);
 	}
 	*/
+	
 	for(int layer=1;layer<n->layers;layer++){
 		for(int add=0;add<n->layerNeuronCount[layer];add++){
 			if(randf(false)<n->neuronMutationRate){
 				*neuronAddressLocator(n,layer,add,false)=*neuronAddressLocator(n,layer,add,false)+randf(true)*n->neuronMutationStrength;
 			}
 			if(randf(false)<n->neuronMutationRate){
-				removeNeuron(n,layer,add);
+				//removeNeuron(n,layer,add);
 			}
-			if(randf(false)<n->neuronMutationRate){
-				addNeuron(n,layer,randf(true));
+			if(randf(false)<n->neuronMutationRate/10){
+				for(int z=0;z<10;z++){
+					//addNeuron(n,layer,randf(true));
+				}
 			}
 		}
 	}	
 	for(int i=0;i<n->connectionNum;i++){
 		if(randf(false)<n->connectionMutationRate){
-			//addConnection(n,n->connections[i]);//duplication
+			addConnection(n,n->connections[i]);//duplication
 		}
-		if(randf(false)<n->connectionMutationRate){
-			int from_layer=rand()%(n->layers-1),from_address=rand()%n->layerNeuronCount[from_layer],to_layer=rand()%(n->layers-from_layer)+from_layer,to_address=rand()%n->layerNeuronCount[to_layer];
-			addConnection(n,createConnection(from_address,from_layer,to_address,to_layer));//new random
+		if(randf(false)<n->connectionMutationRate/50){//50 times less likely to add connections, but adds 50 at once, promotes big evolutions 
+			for(int z=0;z<50;z++){
+				int from_layer=rand()%(n->layers-1),from_address=rand()%n->layerNeuronCount[from_layer],to_layer=rand()%(n->layers-from_layer-1)+from_layer+1,to_address=rand()%n->layerNeuronCount[to_layer];
+				addConnection(n,createConnection(from_address,from_layer,to_address,to_layer));//new random
+			}
 		}
 		if(randf(false)<n->connectionMutationRate){
 			removeConnection(n,n->connections+i);

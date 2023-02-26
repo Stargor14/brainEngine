@@ -1,6 +1,4 @@
 #ifndef FITNESS_H
-#define FITNESS_H
-
 #include "neuro.h"
 #include <string>
 using namespace neuro;
@@ -21,12 +19,13 @@ struct evalPos{//already evaluated position
 //randomly generate various sets to train and test on
 //stage 1 fitness evaluation: make stockfish play itself, pick random position, take its score and the final result of the game
 //stage 2 fitness evaluation: self play. ~16 network tournament, top 2 reproduce, replace th
-
+extern Move BestMove;
 void startEngine(const char*); 
 void generateFile(const char* file);//generate custom file for use by network fitness evaluation function
 void startSelection(const char* file);//method for selection when a selection file is provided
 void startSelection(int networks,int generation,const char* name, const char* file);//overloaded method for brand new selection if no file is provided
 void startEvaluation(const char* netPath, const char* evalPath);//evaluates a single network, writes its result to a file
+void startGame(const char* net1, const char* net2, int timePerMove, int maxGameMoves);
 //command line arguments for running uci mode, evalution mode, etc.
 }
 #endif

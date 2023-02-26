@@ -247,6 +247,7 @@ public:
   // Doing and undoing moves
   void backup(UndoInfo &u) const;
   void restore(const UndoInfo &u);
+  void do_move(Move m);
   void do_move(Move m, UndoInfo &u);
   void do_move(Move m, UndoInfo &u, Bitboard dcCandidates);
   void undo_move(Move m, const UndoInfo &u);

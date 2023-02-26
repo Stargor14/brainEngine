@@ -112,6 +112,9 @@ int main(int argc, char *argv[]) {
 		neuro::printInfo(neuro::init(argv[2]),true);
 
 	}
+	else if(std::string(argv[1]).find("play")!=std::string::npos){
+		fitness::startGame(argv[2],argv[3],atoi(argv[4]),atoi(argv[5]));
+	}
 	else{
 		std::cout<<"no valid argument provided, run with -h or help\n";
 	}

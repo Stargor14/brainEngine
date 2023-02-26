@@ -729,6 +729,11 @@ void Position::restore(const UndoInfo &u) {
 /// the discovered check candidates makes it easier to update the checkersBB
 /// member variable in the position object.
 
+void Position::do_move(Move m) {
+	UndoInfo u;
+	backup(u);
+	do_move(m,u);
+}
 void Position::do_move(Move m, UndoInfo &u) {
   this->do_move(m, u, this->discovered_check_candidates(this->side_to_move()));
 }

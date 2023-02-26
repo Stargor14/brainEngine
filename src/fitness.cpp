@@ -4,8 +4,11 @@
 #include <fstream>
 #include "neuro.h"
 #include "position.h"
+#include "search.h"
+#include "uci.h"
 using namespace std;
 namespace fitness{
+Move BestMove;
 //./pgn-extract -Wfen --selectonly 1:100 --output test.f database.pgn -Rroster --xroster
 void generateFile(const char* path){
 	string line,temp;
@@ -135,10 +138,51 @@ void startSelection(int networks,int generations,const char* name,const char* fi
 	fwrite(std::to_string(generations).c_str(),sizeof(char),to_string(generations).size(),out);//population size
 	fclose(out);
 	for(int i=0;i<networks;i++){
-		n=neuro::init(5,neuro::inputNum,800,0.03,0.03,3,0.1,20);
+		n=neuro::init(5,neuro::inputNum,500,0.01,0.01,1,0.1,10);
 		neuro::serialize(n,to_string(i).append(".network").c_str());
 	}
 	startSelection(std::string(name).append(".selection").c_str());
+}
+void testgo(Position RootPosition, int depth) {
+    int time[2] = {0, 0}, inc[2] = {0, 0}, movesToGo = 0, nodes = 0;
+    int moveTime = 0;
+    bool infinite = false, ponder = false;
+    Move searchMoves[500];
+
+    searchMoves[0] = MOVE_NONE;
+    
+
+    think(RootPosition, infinite, ponder, time[RootPosition.side_to_move()],
+          inc[RootPosition.side_to_move()], movesToGo, depth, nodes, moveTime,
+          searchMoves);
+  }
+ 
+void startGame(const char* path1,const char* path2, int searchDepth, int moveNumberLimit){
+	Position currPos=Position(StartPosition);
+	neuro::network* networks[2]= {neuro::init(path1),neuro::init(path2)};
+	bool currentNetwork=false;//false for network 1, true for 2
+	int ply=0;
+	//think() the current position, passing in time per move
+	//take the best move
+	//do_move() on the best move
+	//switch neuro::current to the other network
+	//END CONDITIONS
+	//checkmate
+	//draw
+	//totalmoves>moveNumberLimit
+//	currPos.print();
+	while(ply<moveNumberLimit*2&&currPos.is_ok()&&!currPos.is_mate()&&!currPos.is_draw()){
+	//	think(currPos,true,true,0,0,0,0,0,timePerMove,moves);
+		neuro::current=networks[(int)currentNetwork];
+		testgo(currPos,searchDepth);
+		cout<<"BESTEST GREATESTMOVE "<<BestMove;
+		cout<<'\n';
+		currPos.do_move(BestMove);
+		currentNetwork=!currentNetwork;
+		currPos.print();
+		ply++;
+	}
+	currPos.print();
 }
 int roundScore(float in){
 	if(in>3)return 1;

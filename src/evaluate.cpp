@@ -292,180 +292,10 @@ namespace {
 /// between them based on the remaining material.
 
 Value evaluate(const Position &pos, EvalInfo &ei, int threadID) {
-  Color stm;
-  ScaleFactor factor[2] = {SCALE_FACTOR_NORMAL, SCALE_FACTOR_NORMAL};
-  Phase phase;
-  memset(&ei, 0, sizeof(EvalInfo));
   assert(pos.is_ok());
   assert(threadID >= 0 && threadID < THREAD_MAX);
 
-  //insert custom eval here 
   return value_from_centipawns((int)neuro::eval(neuro::current,pos));
-  stm = pos.side_to_move();
-
-  // Initialize by reading the incrementally updated scores included in the
-  // position object (material + piece square tables):
-  ei.mgValue = pos.mg_value();
-  ei.egValue = pos.eg_value();
-
-  // Probe the material hash table:
-  ei.mi = MaterialTable[threadID]->get_material_info(pos);
-  ei.mgValue += ei.mi->mg_value();
-  ei.egValue += ei.mi->eg_value();
-
-  factor[WHITE] = ei.mi->scale_factor(pos, WHITE);
-  factor[BLACK] = ei.mi->scale_factor(pos, BLACK);
-
-  // If we have a specialized evaluation function for the current material
-  // configuration, call it and return:
-  if(ei.mi->specialized_eval_exists())
-    return ei.mi->evaluate(pos);
-
-  phase = pos.game_phase();
-
-  // Probe the pawn hash table:
-  ei.pi = PawnTable[threadID]->get_pawn_info(pos);
-  ei.mgValue += apply_weight(ei.pi->mg_value(), WeightPawnStructureMidgame);
-  ei.egValue += apply_weight(ei.pi->eg_value(), WeightPawnStructureEndgame);
-
-  // Initialize king attack bitboards and king attack zones for both sides:
-  ei.attackedBy[WHITE][KING] = pos.king_attacks(pos.king_square(WHITE));
-  ei.attackedBy[BLACK][KING] = pos.king_attacks(pos.king_square(BLACK));
-  ei.attackZone[WHITE] =
-    ei.attackedBy[BLACK][KING] | (ei.attackedBy[BLACK][KING] >> 8);
-  ei.attackZone[BLACK] =
-    ei.attackedBy[WHITE][KING] | (ei.attackedBy[WHITE][KING] << 8);
-
-  // Initialize pawn attack bitboards for both sides:
-  ei.attackedBy[WHITE][PAWN] =
-    ((pos.pawns(WHITE) << 9) & ~FileABB) | ((pos.pawns(WHITE) << 7) & ~FileHBB);
-  ei.attackCount[WHITE] +=
-    count_1s_max_15(ei.attackedBy[WHITE][PAWN] & ei.attackedBy[BLACK][KING])/2;
-  ei.attackedBy[BLACK][PAWN] =
-    ((pos.pawns(BLACK) >> 7) & ~FileABB) | ((pos.pawns(BLACK) >> 9) & ~FileHBB);
-  ei.attackCount[BLACK] +=
-    count_1s_max_15(ei.attackedBy[BLACK][PAWN] & ei.attackedBy[WHITE][KING])/2;
-
-  // Evaluate pieces:
-  for(Color c = WHITE; c <= BLACK; c++) {
-    Bitboard b;
-
-    // Knights
-    for(int i = 0; i < pos.knight_count(c); i++)
-      evaluate_knight(pos, pos.knight_list(c, i), c, ei);
-    
-    // Bishops
-    for(int i = 0; i < pos.bishop_count(c); i++)
-      evaluate_bishop(pos, pos.bishop_list(c, i), c, ei);
-
-    // Rooks
-    for(int i = 0; i < pos.rook_count(c); i++)
-      evaluate_rook(pos, pos.rook_list(c, i), c, ei);
-
-    // Queens
-    for(int i = 0; i < pos.queen_count(c); i++)
-      evaluate_queen(pos, pos.queen_list(c, i), c, ei);
-
-    // Some special patterns:
-
-    // Trapped bishops on a7/h7/a2/h2
-    b = pos.bishops(c) & MaskA7H7[c];
-    while(b)
-      evaluate_trapped_bishop_a7h7(pos, pop_1st_bit(&b), c, ei);
-
-    // Trapped bishops on a1/h1/a8/h8 in Chess960:
-    if(Chess960) {
-      b = pos.bishops(c) & MaskA1H1[c];
-      while(b)
-	evaluate_trapped_bishop_a1h1(pos, pop_1st_bit(&b), c, ei);
-    }
-
-    ei.attackedBy[c][0] =
-      ei.attackedBy[c][PAWN] | ei.attackedBy[c][KNIGHT] 
-      | ei.attackedBy[c][BISHOP] | ei.attackedBy[c][ROOK] 
-      | ei.attackedBy[c][QUEEN] | ei.attackedBy[c][KING];
-  }
-
-  // Kings.  Kings are evaluated after all other pieces for both sides,
-  // because we need complete attack information for all pieces when computing
-  // the king safety evaluation.
-  for(Color c = WHITE; c <= BLACK; c++)
-    evaluate_king(pos, pos.king_square(c), c, ei);
-
-  // Evaluate passed pawns.  We evaluate passed pawns for both sides at once,
-  // because we need to know which side promotes first in positions where
-  // both sides have an unstoppable passed pawn.
-  if(ei.pi->passed_pawns())
-    evaluate_passed_pawns(pos, ei);
-
-  // Middle-game specific evaluation terms
-  if(phase > PHASE_ENDGAME) {
-
-    // Pawn storms in positions with opposite castling.
-    if(square_file(pos.king_square(WHITE)) >= FILE_E &&
-       square_file(pos.king_square(BLACK)) <= FILE_D)
-      ei.mgValue +=
-        ei.pi->queenside_storm_value(WHITE) -
-        ei.pi->kingside_storm_value(BLACK);
-    else if(square_file(pos.king_square(WHITE)) <= FILE_D &&
-            square_file(pos.king_square(BLACK)) >= FILE_E)
-      ei.mgValue += 
-        ei.pi->kingside_storm_value(WHITE) -
-        ei.pi->queenside_storm_value(BLACK);
-
-    // Evaluate space for both sides.
-    if(ei.mi->space_weight() > 0) {
-      evaluate_space(pos, WHITE, ei);
-      evaluate_space(pos, BLACK, ei);
-    }
-  }
-
-  // Mobility
-  ei.mgValue += apply_weight(ei.mgMobility, WeightMobilityMidgame);
-  ei.egValue += apply_weight(ei.egMobility, WeightMobilityEndgame);
-
-  // If we don't already have an unusual scale factor, check for opposite
-  // colored bishop endgames, and use a lower scale for those:
-  if(phase < PHASE_MIDGAME && pos.opposite_colored_bishops()
-     && ((factor[WHITE] == SCALE_FACTOR_NORMAL && ei.egValue > Value(0)) ||
-         (factor[BLACK] == SCALE_FACTOR_NORMAL && ei.egValue < Value(0)))) {
-    if(pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) ==
-       2*BishopValueMidgame) {
-      // Only the two bishops
-      if(pos.pawn_count(WHITE) + pos.pawn_count(BLACK) == 1) {
-        // KBP vs KB with only a single pawn; almost certainly a draw.
-        if(factor[WHITE] == SCALE_FACTOR_NORMAL)
-          factor[WHITE] = ScaleFactor(8);
-        if(factor[BLACK] == SCALE_FACTOR_NORMAL)
-          factor[BLACK] = ScaleFactor(8);
-      }
-      else {
-        // At least two pawns
-        if(factor[WHITE] == SCALE_FACTOR_NORMAL)
-          factor[WHITE] = ScaleFactor(32);
-        if(factor[BLACK] == SCALE_FACTOR_NORMAL)
-          factor[BLACK] = ScaleFactor(32);
-      }
-    }
-    else {
-      // Endgame with opposite-colored bishops, but also other pieces.
-      // Still a bit drawish, but not as drawish as with only the two
-      // bishops.
-      if(factor[WHITE] == SCALE_FACTOR_NORMAL)
-        factor[WHITE] = ScaleFactor(50);
-      if(factor[BLACK] == SCALE_FACTOR_NORMAL)
-        factor[BLACK] = ScaleFactor(50);
-    }
-  }
-
-  // Interpolate between the middle game and the endgame score, and
-  // return:
-  Value value = scale_by_game_phase(ei.mgValue, ei.egValue, phase, factor);
-
-  if(ei.mateThreat[stm] != MOVE_NONE)
-    return 8 * QueenValueMidgame - Sign[stm] * value;
-  else
-    return Sign[stm] * value;
 }
 
 
@@ -474,24 +304,9 @@ Value evaluate(const Position &pos, EvalInfo &ei, int threadID) {
 /// we should add scores from the pawn and material hash tables?
 
 Value quick_evaluate(const Position &pos) {
-  Color stm;
-  Value mgValue, egValue;
-  ScaleFactor factor[2] = {SCALE_FACTOR_NORMAL, SCALE_FACTOR_NORMAL};
-  Phase phase;
-  
   assert(pos.is_ok());
-
   return value_from_centipawns((int)neuro::eval(neuro::current,pos));
-  stm = pos.side_to_move();
-
-  mgValue = pos.mg_value();
-  egValue = pos.eg_value();
-  phase = pos.game_phase();
-
-  Value value = scale_by_game_phase(mgValue, egValue, phase, factor);
-
-  return Sign[stm] * value;
-}
+ }
   
 
 /// init_eval() initializes various tables used by the evaluation function.
