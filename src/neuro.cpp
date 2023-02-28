@@ -9,7 +9,7 @@
 namespace neuro{
 network* current;
 int inputNum=904,currID=0;
-std::string version="1.1";
+std::string version="2.0a";
 float randf(bool neg){//generates pseudo random number from 0 to 1 or -1 to 1
 	if(neg){
 		if(rand()%2)return ((rand()%100000)/100000.0);
@@ -130,8 +130,9 @@ u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_i
 	ans|=toLayer;
 	return ans;		
 }
-void insertValue(network* n, int* add, Bitboard b){
+void insertValue(network* n, int* add, Bitboard b,bool flipped){
 	std::bitset<64> bs(b);
+	if(flipped) bs^=56;
 	for(int i=0;i<64;i++){
 		*neuronAddressLocator(n,0,*add+i,true)=bs[i]*(*neuronAddressLocator(n,0,*add+i,false));
 	}
@@ -142,8 +143,7 @@ void insertValue(network* n, int* add, bool b){
 	*add++;
 }
 float eval(network* n, std::string pos){
-	if(Position(pos).side_to_move()==Color::WHITE)return eval(n,Position(pos));
-	else{return -eval(n,Position(pos));}
+	return eval(n,Position(pos));
 }
 float eval(network* n, Position pos){
 	/*
@@ -156,19 +156,21 @@ float eval(network* n, Position pos){
 	u_long temp;
 	Color side=pos.side_to_move(), opposite=opposite_color(side);
 	int counter=0;
+	bool flipped=false;
+	if(pos.side_to_move()==Color::BLACK)flipped=true;
 	std::vector<int> numInp;  	
-	insertValue(n,&counter,pos.pawns(side));
-	insertValue(n,&counter,pos.pawns(opposite));
-	insertValue(n,&counter,pos.knights(side));
-	insertValue(n,&counter,pos.knights(opposite));
-	insertValue(n,&counter,pos.rooks(side));
-	insertValue(n,&counter,pos.rooks(opposite));
-	insertValue(n,&counter,pos.queens(side));
-	insertValue(n,&counter,pos.queens(opposite));
-	insertValue(n,&counter,pos.bishops(side));
-	insertValue(n,&counter,pos.bishops(opposite));
-	insertValue(n,&counter,pos.kings(side));
-	insertValue(n,&counter,pos.kings(opposite));
+	insertValue(n,&counter,pos.pawns(side),flipped);
+	insertValue(n,&counter,pos.pawns(opposite),flipped);
+	insertValue(n,&counter,pos.knights(side),flipped);
+	insertValue(n,&counter,pos.knights(opposite),flipped);
+	insertValue(n,&counter,pos.rooks(side),flipped);
+	insertValue(n,&counter,pos.rooks(opposite),flipped);
+	insertValue(n,&counter,pos.queens(side),flipped);
+	insertValue(n,&counter,pos.queens(opposite),flipped);
+	insertValue(n,&counter,pos.bishops(side),flipped);
+	insertValue(n,&counter,pos.bishops(opposite),flipped);
+	insertValue(n,&counter,pos.kings(side),flipped);
+	insertValue(n,&counter,pos.kings(opposite),flipped);
 	//12*64
 	insertValue(n,&counter,pos.can_castle_kingside(side));
 	insertValue(n,&counter,pos.can_castle_kingside(opposite));
@@ -178,11 +180,20 @@ float eval(network* n, Position pos){
 	insertValue(n,&counter,pos.is_draw());
 	insertValue(n,&counter,pos.has_mate_threat(side));
 	insertValue(n,&counter,pos.has_mate_threat(opposite));
-	//8 -> 906 total
-	for(int i=0;i<64;i++){
-		insertValue(n,&counter,pos.square_is_attacked((Square)i,side));		
-		insertValue(n,&counter,pos.square_is_attacked((Square)i,opposite));		
+	//8
+	if(flipped){
+		for(int i=63;i<=0;i--){
+			insertValue(n,&counter,pos.square_is_attacked((Square)i,side));		
+			insertValue(n,&counter,pos.square_is_attacked((Square)i,opposite));		
+		}
 	}
+	else{
+		for(int i=0;i<64;i++){
+			insertValue(n,&counter,pos.square_is_attacked((Square)i,side));		
+			insertValue(n,&counter,pos.square_is_attacked((Square)i,opposite));		
+		}
+	}
+	//64*2 -> 904 total
 	for(int i=0;i<n->connectionNum;i++){
 		temp=n->connections[i];
 	//	std::cout<<"to_layer: "<<(n->connections[i]&0xF)<<"to_address: "<<((n->connections[i]>>4)&0xFFFFFFF)<<'\n';

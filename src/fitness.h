@@ -20,6 +20,7 @@ struct evalPos{//already evaluated position
 //stage 1 fitness evaluation: make stockfish play itself, pick random position, take its score and the final result of the game
 //stage 2 fitness evaluation: self play. ~16 network tournament, top 2 reproduce, replace th
 extern Move BestMove;
+extern bool verbose;
 void startEngine(const char*); 
 void generateFile(const char* file);//generate custom file for use by network fitness evaluation function
 void startSelection(const char* file);//method for selection when a selection file is provided

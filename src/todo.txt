@@ -8,4 +8,4 @@ it stops the engine from learning to play specifically agasint itself and instea
 
 part of fitness.cpp
 
-find a way to interact with an instance of the program
+figure out why search depth is breaking

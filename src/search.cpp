@@ -53,7 +53,6 @@ namespace {
   // The RootMove class is used for moves at the root at the tree.  For each
   // root move, we store a score, a node count, and a PV (really a refutation
   // in the case of moves which fail low).
-	Move BM;
   class RootMove {
 
   public:
@@ -204,11 +203,11 @@ namespace {
 
   // MP related variables
   Depth MinimumSplitDepth = 4*OnePly;
-  int MaxThreadsPerSplitPoint = 4;
+  int MaxThreadsPerSplitPoint = 8;
   Thread Threads[THREAD_MAX];
   Lock MPLock;
   bool AllThreadsShouldExit = false;
-  const int MaxActiveSplitPoints = 8;
+  const int MaxActiveSplitPoints = 1;
   SplitPoint SplitPointStack[THREAD_MAX][MaxActiveSplitPoints];
   bool Idle = true;
 
@@ -309,6 +308,7 @@ void think(const Position &pos, bool infinite, bool ponder, int time,
     }
     bookMove = OpeningBook.get_move(pos);
     if(bookMove != MOVE_NONE) {
+	fitness::BestMove=bookMove;
       std::cout << "bestmove " << bookMove << std::endl;
       return;
     }
@@ -560,7 +560,10 @@ namespace {
   // repeatedly with increasing depth until the allocated thinking time has
   // been consumed, the user stops the search, or the maximum search depth is
   // reached.
-
+void ch(int curr){
+	//if(fitness::verbose)
+	//std::cout<<"got to checkpoint "<<curr<<'\n';
+}
   void id_loop(const Position &pos, Move searchMoves[]) {
     Position p(pos);
     RootMoveList rml(p, searchMoves);
@@ -587,8 +590,9 @@ namespace {
       if(Iteration <= 5)
         ExtraSearchTime = 0;
 
+    if(fitness::verbose){
       std::cout << "info depth " << Iteration << std::endl;
-
+    }
       // Search to the current depth
       ValueByIteration[Iteration] = root_search(p, ss, rml);
 
@@ -609,9 +613,9 @@ namespace {
         // Stop search early when the last two iterations returned a mate
         // score:
         if(Iteration >= 6
-           && abs(ValueByIteration[Iteration]) >= abs(VALUE_MATE) - 100
-           && abs(ValueByIteration[Iteration-1]) >= abs(VALUE_MATE) - 100)
-          stopSearch = true;
+           && ValueByIteration[Iteration] >= VALUE_MATE - 100
+           && ValueByIteration[Iteration-1] >= VALUE_MATE - 100
+	  )stopSearch = true;
 
         // Stop search early if one move seems to be much better than the
         // rest:
@@ -660,12 +664,14 @@ namespace {
       wait_for_stop_or_ponderhit();
     else
       // Print final search statistics
+    if(fitness::verbose){
       std::cout << "info nodes " << nodes_searched() << " nps " << nps()
                 << " time " << current_search_time()
                 << " hashfull " << TT.full() << std::endl;
-
+    }
     // Print the best move and the ponder move to the standard output:
     std::cout << "bestmove " << ss[0].pv[0];
+   //INSERTED CODE TO INFORM FITNESS FILE OF THE BEST MOVE 
     fitness::BestMove=ss[0].pv[0];
     if(ss[0].pv[1] != MOVE_NONE)
       std::cout << " ponder " << ss[0].pv[1];
@@ -691,7 +697,8 @@ namespace {
   Value root_search(Position &pos, SearchStack ss[], RootMoveList &rml) {
     Value alpha = -VALUE_INFINITE, beta = VALUE_INFINITE, value;
     Bitboard dcCandidates = pos.discovered_check_candidates(pos.side_to_move());
-
+    if(fitness::verbose)
+    std::cout<<"started root_search\n";
     // Loop through all the moves in the root move list:
     for(int i = 0; i <  rml.move_count() && !AbortSearch; i++) {
       int64_t nodes;
@@ -709,9 +716,9 @@ namespace {
       // Pick the next root move, and print the move and the move number to
       // the standard output:
       move = ss[0].currentMove = rml.get_move(i);
-      if(current_search_time() >= 1000)
-        std::cout << "info currmove " << move
-                  << " currmovenumber " << i + 1 << std::endl;
+      //if(current_search_time() >= 1000)
+        //std::cout << "info currmove " << move
+          //        << " currmovenumber " << i + 1 << std::endl;
       
       // Decide search depth for this move:
       ext = extension(pos, move, true, pos.move_is_check(move), false, false);
@@ -721,7 +728,11 @@ namespace {
       pos.do_move(move, u, dcCandidates);
 
       if(i < MultiPV) {
+    if(fitness::verbose)
+    	std::cout<<"started pv_search\n";
         value = -search_pv(pos, ss, -beta, VALUE_INFINITE, newDepth, 1, 0);
+    if(fitness::verbose)
+    	std::cout<<"completed pv_search\n";
         // If the value has dropped a lot compared to the last iteration,
         // set the boolean variable Problem to true.  This variable is used
         // for time managment:  When Problem is true, we try to complete the
@@ -732,7 +743,11 @@ namespace {
           StopOnPonderhit = false;
       }
       else {
+    if(fitness::verbose)
+    	std::cout<<"started search\n";
         value = -search(pos, ss, -alpha, newDepth, 1, true, 0);
+    if(fitness::verbose)
+    	std::cout<<"completed search\n";
         if(value > alpha) {
           // Fail high!  Set the boolean variable FailHigh to true, and 
           // re-search the move with a big window.  The variable FailHigh is
@@ -777,16 +792,19 @@ namespace {
             BestMoveChangesByIteration[Iteration]++;
 
           // Print search information to the standard output:
-          std::cout << "info depth " << Iteration
+          
+    	if(fitness::verbose){
+	  std::cout << "info depth " << Iteration
                     << " score " << value_to_string(value)
                     << " time " << current_search_time()
                     << " nodes " << nodes_searched()
                     << " nps " << nps()
                     << " pv ";
+	
           for(int j = 0; ss[0].pv[j] != MOVE_NONE && j < PLY_MAX; j++)
             std::cout << ss[0].pv[j] << " ";
           std::cout << std::endl;
-
+	}
           if(UseLogFile)
             LogFile << pretty_pv(pos, current_search_time(), Iteration,
                                  nodes_searched(), value, ss[0].pv)
@@ -801,6 +819,7 @@ namespace {
         }
         else { // MultiPV > 1
           rml.sort_multipv(i);
+    if(fitness::verbose){
           for(int j = 0; j < Min(MultiPV, rml.move_count()); j++) {
             int k;
             std::cout << "info multipv " << j + 1
@@ -813,11 +832,14 @@ namespace {
             for(k = 0; rml.get_move_pv(j, k) != MOVE_NONE && k < PLY_MAX; k++)
               std::cout << rml.get_move_pv(j, k) << " ";
             std::cout << std::endl;
+    		}
           }
           alpha = rml.get_move_score(Min(i, MultiPV-1));
         }
       }
     }
+    if(fitness::verbose)
+    std::cout<<"completed root_search\n";
     return alpha;
   }
 
@@ -856,7 +878,7 @@ namespace {
     beta = Min(value_mate_in(ply+1), beta);
     if(alpha >= beta)
       return alpha;
-
+	ch(1);
     // Transposition table lookup.  At PV nodes, we don't use the TT for
     // pruning, but only for move ordering.  
     Value ttValue;
@@ -884,6 +906,7 @@ namespace {
       MateThreatExtension[1] > Depth(0)
       && pos.has_mate_threat(opposite_color(pos.side_to_move()));
 
+	ch(2);
     // Loop through all legal moves until no moves remain or a beta cutoff
     // occurs.
     while(alpha < beta && !thread_should_stop(threadID)
@@ -905,9 +928,11 @@ namespace {
       ext = extension(pos, move, true, moveIsCheck, singleReply, mateThreat);
       newDepth = depth - OnePly + ext;
 
+	ch(3);
       // Make and search the move.
       pos.do_move(move, u, dcCandidates);
       
+	ch(4);
       if(moveCount == 1) 
         value = -search_pv(pos, ss, -beta, -alpha, newDepth, ply+1, threadID);
       else {
@@ -937,10 +962,12 @@ namespace {
           }
         }
       }
+	ch(5);
       pos.undo_move(move, u);
 
       assert(value > -VALUE_INFINITE && value < VALUE_INFINITE);
       
+	ch(6);
       // New best move?
       if(value > bestValue) {
         bestValue = value;
@@ -958,15 +985,19 @@ namespace {
           Problem = true;
       }
 
+	ch(7);
       // Split?
+      /*
       if(ActiveThreads > 1 && bestValue < beta && depth >= MinimumSplitDepth
          && Iteration <= 99 && idle_thread_exists(threadID)
          && !AbortSearch && !thread_should_stop(threadID)
          && split(pos, ss, ply, &alpha, &beta, &bestValue, depth,
                   &moveCount, &mp, dcCandidates, threadID, true))
         break;
+	*/
     }
 
+	ch(8);
     // All legal moves have been searched.  A special case: If there were
     // no legal moves, it must be mate or stalemate:
     if(moveCount == 0) {
@@ -979,6 +1010,7 @@ namespace {
     // If the search is not aborted, update the transposition table, 
     // history counters, and killer moves.  This code is somewhat messy,
     // and definitely needs to be cleaned up.  FIXME
+    
     if(!AbortSearch && !thread_should_stop(threadID)) {
       if(bestValue <= oldAlpha)
         TT.store(pos, value_to_tt(bestValue, ply), depth, MOVE_NONE,
@@ -1004,8 +1036,7 @@ namespace {
         TT.store(pos, value_to_tt(bestValue, ply), depth, m, VALUE_TYPE_LOWER);
       }
       else
-        TT.store(pos, value_to_tt(bestValue, ply), depth, ss[ply].pv[ply],
-                 VALUE_TYPE_EXACT);
+        TT.store(pos, value_to_tt(bestValue, ply), depth, ss[ply].pv[ply],VALUE_TYPE_EXACT);
     }
 
     return bestValue;
@@ -1032,12 +1063,14 @@ namespace {
 
     init_node(pos, ss, ply, threadID);
 
+	ch(9);
     if(pos.is_draw())
       return VALUE_DRAW;
 
     if(ply >= PLY_MAX - 1)
       return evaluate(pos, ei, threadID);
 
+	ch(10);
     // Mate distance pruning
     if(value_mated_in(ply) >= beta)
       return beta;
@@ -1051,7 +1084,8 @@ namespace {
     Move ttMove = MOVE_NONE;
     ValueType ttValueType;
 
-    ttFound = TT.retrieve(pos, &ttValue, &ttDepth, &ttMove, &ttValueType);
+	ch(11);
+    //ttFound = TT.retrieve(pos, &ttValue, &ttDepth, &ttMove, &ttValueType);
     if(ttFound) {
       ttValue = value_from_tt(ttValue, ply);
       if(ttDepth >= depth
@@ -1065,6 +1099,7 @@ namespace {
       }
     }
 
+	ch(12);
     Value approximateEval = quick_evaluate(pos);
     bool mateThreat = false;
 
@@ -1078,8 +1113,8 @@ namespace {
       pos.do_null_move(u);
       nullValue = -search(pos, ss, -(beta-1), depth-4*OnePly, ply+1, false,
                           threadID);
+	ch(13);
       pos.undo_null_move(u);
-
       if(nullValue >= beta) {
         if(depth >= 6 * OnePly) { // Do zugzwang verification search
           Value v = search(pos, ss, beta, depth-5*OnePly, ply, false, threadID);
@@ -1111,7 +1146,7 @@ namespace {
       if(v < beta)
         return v;
     }
-
+	ch(14);
     // Internal iterative deepening
     if(UseIIDAtNonPVNodes && ttMove == MOVE_NONE && depth >= 8*OnePly &&
        evaluate(pos, ei, threadID) >= beta - IIDMargin) {
@@ -1133,6 +1168,7 @@ namespace {
 
     // Loop through all legal moves until no moves remain or a beta cutoff
     // occurs.
+	ch(15);
     while(bestValue < beta && !thread_should_stop(threadID)
           && (move = mp.get_next_move()) != MOVE_NONE) {
       UndoInfo u;
@@ -1172,6 +1208,7 @@ namespace {
       }
 
       // Make and search the move.
+	ch(16);
       pos.do_move(move, u, dcCandidates);
       
       if(depth >= 2*OnePly && ext == Depth(0) && moveCount >= LMRNonPVMoves
@@ -1188,6 +1225,7 @@ namespace {
         ss[ply].reduction = Depth(0);
         value = -search(pos, ss, -(beta-1), newDepth, ply+1, true, threadID);
       }
+	ch(17);
       pos.undo_move(move, u);
 
       assert(value > -VALUE_INFINITE && value < VALUE_INFINITE);
@@ -1202,12 +1240,14 @@ namespace {
       }
 
       // Split?
+      /*
       if(ActiveThreads > 1 && bestValue < beta && depth >= MinimumSplitDepth
          && Iteration <= 99 && idle_thread_exists(threadID)
          && !AbortSearch && !thread_should_stop(threadID)
          && split(pos, ss, ply, &beta, &beta, &bestValue, depth, &moveCount,
                   &mp, dcCandidates, threadID, false))
         break;
+	*/
     }
 
     // All legal moves have been searched.  A special case: If there were
@@ -1222,6 +1262,7 @@ namespace {
     // If the search is not aborted, update the transposition table,
     // history counters, and killer moves.  This code is somewhat messy,
     // and definitely needs to be cleaned up.  FIXME
+	ch(18);
     if(!AbortSearch && !thread_should_stop(threadID)) {
       if(bestValue < beta)
         TT.store(pos, value_to_tt(bestValue, ply), depth, MOVE_NONE,
@@ -1248,6 +1289,7 @@ namespace {
       }
     }
 
+	ch(19);
     return bestValue;
   }
   
@@ -1278,8 +1320,9 @@ namespace {
       return VALUE_DRAW;
 
     // Evaluate the position statically:
+    ch(20);
     staticValue = evaluate(pos, ei, threadID);
-
+	ch(21);
     if(ply == PLY_MAX - 1) return staticValue;
 
     // Initialize "stand pat score", and return it immediately if it is
@@ -1294,6 +1337,7 @@ namespace {
         alpha = bestValue;
     }
 
+	ch(22);
     // Initialize a MovePicker object for the current position, and prepare
     // to search the moves.  Because the depth is <= 0 here, only captures,
     // queen promotions and checks (only if depth == 0) will be generated.
@@ -1425,15 +1469,13 @@ namespace {
          && !move_is_castle(move)
          && move != ss[sp->ply].killer1 && move != ss[sp->ply].killer2) {
         ss[sp->ply].reduction = OnePly;
-        value = -search(pos, ss, -(sp->beta-1), newDepth - OnePly, sp->ply+1,
-                        true, threadID);
+        value = -search(pos, ss, -(sp->beta-1), newDepth - OnePly, sp->ply+1,true, threadID);
       }
       else
         value = sp->beta;
       if(value >= sp->beta) {
         ss[sp->ply].reduction = Depth(0);
-        value = -search(pos, ss, -(sp->beta - 1), newDepth, sp->ply+1, true,
-                        threadID);
+        value = -search(pos, ss, -(sp->beta - 1), newDepth, sp->ply+1, true,threadID);
       }
       pos.undo_move(move, u);
 
@@ -2057,8 +2099,10 @@ namespace {
     else if(t - lastInfoTime >= 1000) {
       lastInfoTime = t;
       lock_grab(&IOLock);
+    if(fitness::verbose){
       std::cout << "info nodes " << nodes_searched() << " nps " << nps()
                 << " time " << t << " hashfull " << TT.full() << std::endl;
+    }
       lock_release(&IOLock);
       if(ShowCurrentLine) 
         Threads[0].printCurrentLine = true;
@@ -2109,10 +2153,12 @@ namespace {
 
     if(!Threads[threadID].idle) {
       lock_grab(&IOLock);
+    if(fitness::verbose){
       std::cout << "info currline " << (threadID + 1);
       for(int p = 0; p < ply; p++)
         std::cout << " " << ss[p].currentMove;
       std::cout << std::endl;
+    }
       lock_release(&IOLock);
     }
     Threads[threadID].printCurrentLine = false;
@@ -2296,11 +2342,10 @@ namespace {
   // threads have returned from sp_search_pv (or, equivalently, when
   // splitPoint->cpus becomes 0), split() returns true.
 
-  bool split(const Position &p, SearchStack *sstck, int ply,
-             Value *alpha, Value *beta, Value *bestValue,
-             Depth depth, int *moves,
-             MovePicker *mp, Bitboard dcCandidates, int master, bool pvNode) {
-    assert(p.is_ok());
+  bool split(const Position &p, SearchStack *sstck, int ply,Value *alpha, Value *beta, Value *bestValue,Depth depth, int *moves,MovePicker *mp, Bitboard dcCandidates, int master, bool pvNode) {
+	  //instantly return false, split code is poorly written, causes crashes and memory faults
+    return false;
+	  assert(p.is_ok());
     assert(sstck != NULL);
     assert(ply >= 0 && ply < PLY_MAX);
     assert(*bestValue >= -VALUE_INFINITE && *bestValue <= *alpha);

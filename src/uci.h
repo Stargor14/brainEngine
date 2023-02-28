@@ -25,8 +25,5 @@
 ////
 
 extern void uci_main_loop();
-namespace {
-void go();
-};
 
 #endif // !defined(UCI_H_INCLUDED)

@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
 		}
 		else if(std::string(argv[3]).find(".eval") != std::string::npos){
 			fitness::startSelection(atoi(argv[4]),atoi(argv[5]),argv[2],argv[3]);//start a new selection from scratch, using provided evaluation file	
+			//format: ./carnosaEngine sof name name.eval #networks #generations 
 		}
 		else{
 			std::cout<<"please provide a selection file, or name for new selection file, name of eval file, the number of networks in each generation, and the number of generations to run selection for\n";
@@ -115,14 +116,19 @@ int main(int argc, char *argv[]) {
 	else if(std::string(argv[1]).find("play")!=std::string::npos){
 		fitness::startGame(argv[2],argv[3],atoi(argv[4]),atoi(argv[5]));
 	}
+	else if(std::string(argv[1]).find(".network")!=std::string::npos){
+		std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"<< std::endl;
+		neuro::current=neuro::init(argv[1]);
+  		uci_main_loop();
+
+	}
 	else{
 		std::cout<<"no valid argument provided, run with -h or help\n";
 	}
   }
   else{//if no argument is provided
   	std::cout << engine_name() << " by Eryk Halicki, based on Glaurung 2.2"<< std::endl;
-//  	neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);//instead of blank network, use a specific .network file
-	neuro::current=neuro::init("best.network");
+	neuro::current=neuro::init(4,904,150,0.01,0.01,2,0.1,5);//instead of blank network, use a specific .network file
   	uci_main_loop();
   }
   return 0;

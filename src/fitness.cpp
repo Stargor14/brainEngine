@@ -9,6 +9,7 @@
 using namespace std;
 namespace fitness{
 Move BestMove;
+bool verbose=true;
 //./pgn-extract -Wfen --selectonly 1:100 --output test.f database.pgn -Rroster --xroster
 void generateFile(const char* path){
 	string line,temp;
@@ -138,12 +139,12 @@ void startSelection(int networks,int generations,const char* name,const char* fi
 	fwrite(std::to_string(generations).c_str(),sizeof(char),to_string(generations).size(),out);//population size
 	fclose(out);
 	for(int i=0;i<networks;i++){
-		n=neuro::init(5,neuro::inputNum,500,0.01,0.01,1,0.1,10);
+		n=neuro::init(5,neuro::inputNum,300,0.02,0.02,2,0.1,50);
 		neuro::serialize(n,to_string(i).append(".network").c_str());
 	}
 	startSelection(std::string(name).append(".selection").c_str());
 }
-void testgo(Position RootPosition, int depth) {
+void testgo(Position RootPosition, int maxTime) {
     int time[2] = {0, 0}, inc[2] = {0, 0}, movesToGo = 0, nodes = 0;
     int moveTime = 0;
     bool infinite = false, ponder = false;
@@ -151,13 +152,14 @@ void testgo(Position RootPosition, int depth) {
 
     searchMoves[0] = MOVE_NONE;
     
+    infinite=true;
 
     think(RootPosition, infinite, ponder, time[RootPosition.side_to_move()],
-          inc[RootPosition.side_to_move()], movesToGo, depth, nodes, moveTime,
+          inc[RootPosition.side_to_move()], movesToGo, 0, nodes, maxTime,
           searchMoves);
   }
  
-void startGame(const char* path1,const char* path2, int searchDepth, int moveNumberLimit){
+void startGame(const char* path1,const char* path2, int maxTime, int moveNumberLimit){
 	Position currPos=Position(StartPosition);
 	neuro::network* networks[2]= {neuro::init(path1),neuro::init(path2)};
 	bool currentNetwork=false;//false for network 1, true for 2
@@ -174,7 +176,7 @@ void startGame(const char* path1,const char* path2, int searchDepth, int moveNum
 	while(ply<moveNumberLimit*2&&currPos.is_ok()&&!currPos.is_mate()&&!currPos.is_draw()){
 	//	think(currPos,true,true,0,0,0,0,0,timePerMove,moves);
 		neuro::current=networks[(int)currentNetwork];
-		testgo(currPos,searchDepth);
+		testgo(currPos,maxTime);
 		cout<<"BESTEST GREATESTMOVE "<<BestMove;
 		cout<<'\n';
 		currPos.do_move(BestMove);

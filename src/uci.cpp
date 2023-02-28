@@ -100,22 +100,6 @@ void uci_main_loop() {
 ////
 
 namespace {
-void go() {
-    int time[2] = {0, 0}, inc[2] = {0, 0}, movesToGo = 0, depth = 0, nodes = 0;
-    int moveTime = 0;
-    bool infinite = false, ponder = false;
-    Move searchMoves[500];
-
-    searchMoves[0] = MOVE_NONE;
-    
-    if(moveTime)
-      infinite = true;  // HACK
-
-    think(RootPosition, infinite, ponder, time[RootPosition.side_to_move()],
-          inc[RootPosition.side_to_move()], movesToGo, depth, nodes, moveTime,
-          searchMoves);
-  }
- 
   ///
   /// Implementation of the UCIInputParser class.
   ///
