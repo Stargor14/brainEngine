@@ -151,7 +151,6 @@ float eval(network* n, Position pos){
 	 * add feeding of all bitboards, subtraction of opposite color value
 	 *
 	 */
-
 	float ans=0;
 	u_long temp;
 	Color side=pos.side_to_move(), opposite=opposite_color(side);
@@ -176,11 +175,9 @@ float eval(network* n, Position pos){
 	insertValue(n,&counter,pos.can_castle_kingside(opposite));
 	insertValue(n,&counter,pos.can_castle_queenside(side));
 	insertValue(n,&counter,pos.can_castle_queenside(opposite));
-	insertValue(n,&counter,pos.is_mate());
-	insertValue(n,&counter,pos.is_draw());
 	insertValue(n,&counter,pos.has_mate_threat(side));
 	insertValue(n,&counter,pos.has_mate_threat(opposite));
-	//8
+	//6
 	if(flipped){
 		for(int i=63;i<=0;i--){
 			insertValue(n,&counter,pos.square_is_attacked((Square)i,side));		
@@ -193,7 +190,7 @@ float eval(network* n, Position pos){
 			insertValue(n,&counter,pos.square_is_attacked((Square)i,opposite));		
 		}
 	}
-	//64*2 -> 904 total
+	//64*2 -> 902 total
 	for(int i=0;i<n->connectionNum;i++){
 		temp=n->connections[i];
 	//	std::cout<<"to_layer: "<<(n->connections[i]&0xF)<<"to_address: "<<((n->connections[i]>>4)&0xFFFFFFF)<<'\n';
@@ -207,6 +204,8 @@ float eval(network* n, Position pos){
 	}
 	//std::cout<<"info 0 score: "<<ans<<'\n';
 	clear(n);
+	if(pos.is_mate())ans=-9999999; 
+	if(pos.is_draw())ans=0; 
 	if(pos.side_to_move()==Color::WHITE)return ans;
 	else{return -ans;}
 }
@@ -447,10 +446,6 @@ void printInfo(network* n, bool verbose){
 	}
 	}
 	std::cout<<"connections: "<<n->connectionNum<<'\n';
-}
-float similiarity(network* n1,network* n2){
-	float ans;
-	return ans;
 }
 void test(){
 	//finish eval function, add all bitboards to the input

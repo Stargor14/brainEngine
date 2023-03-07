@@ -1,11 +1,14 @@
 add param mutation to mutation function
-create a better ranking/fitness evaluating system, promote advancements that may not immediatley lead to improved scores
 
-create new selection function, self play
-self play from a random position?
-by starting from random positions weird local minima are avoided 
-it stops the engine from learning to play specifically agasint itself and instead forces it to learn how to play in situations that it didnt create
+write self play recording 
+self play until checkmate or draw
 
-part of fitness.cpp
+score file,
 
-figure out why search depth is breaking
+scan through for the network name
+if network there, add on the final score of its game
+if not, initilize it
+count total amount of games in the top of the file
+once all games are played, sort the scores, reproduce the top 4 networks
+
+

@@ -1,7 +1,10 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <vector>
 #include <fstream>
+#include <future>
+#include <unistd.h>
 #include "neuro.h"
 #include "position.h"
 #include "search.h"
@@ -9,7 +12,8 @@
 using namespace std;
 namespace fitness{
 Move BestMove;
-bool verbose=true;
+bool verbose=false, isChild=false;
+
 //./pgn-extract -Wfen --selectonly 1:100 --output test.f database.pgn -Rroster --xroster
 void generateFile(const char* path){
 	string line,temp;
@@ -49,7 +53,7 @@ void startSelection(const char* path){
 	string line,evalFile;
 	file.open(path);
 	bool waiting=true;
-	neuro::network* children,ntemp;
+	neuro::network* children;
 	if(file.is_open()){
 		getline(file,line);
 		evalFile=line;
@@ -71,7 +75,7 @@ void startSelection(const char* path){
 		cout<<"started generation: "<<gen<<"\n";
 		for(int i=0;i<population;i++){
 			system(std::string("rm ").append(to_string(i)).append(".network.result").c_str());
-			system(std::string("./carnosaEngine -e ").append(to_string(i)).append(".network ").append(evalFile).c_str());
+			//async(system,std::string("./carnosaEngine -e ").append(to_string(i)).append(".network ").append(evalFile).c_str());
 			//cout<<"started proccess "<<i<<'\n';
 		}
 		for(int i=0;i<population;i++){
@@ -144,48 +148,7 @@ void startSelection(int networks,int generations,const char* name,const char* fi
 	}
 	startSelection(std::string(name).append(".selection").c_str());
 }
-void testgo(Position RootPosition, int maxTime) {
-    int time[2] = {0, 0}, inc[2] = {0, 0}, movesToGo = 0, nodes = 0;
-    int moveTime = 0;
-    bool infinite = false, ponder = false;
-    Move searchMoves[500];
 
-    searchMoves[0] = MOVE_NONE;
-    
-    infinite=true;
-
-    think(RootPosition, infinite, ponder, time[RootPosition.side_to_move()],
-          inc[RootPosition.side_to_move()], movesToGo, 0, nodes, maxTime,
-          searchMoves);
-  }
- 
-void startGame(const char* path1,const char* path2, int maxTime, int moveNumberLimit){
-	Position currPos=Position(StartPosition);
-	neuro::network* networks[2]= {neuro::init(path1),neuro::init(path2)};
-	bool currentNetwork=false;//false for network 1, true for 2
-	int ply=0;
-	//think() the current position, passing in time per move
-	//take the best move
-	//do_move() on the best move
-	//switch neuro::current to the other network
-	//END CONDITIONS
-	//checkmate
-	//draw
-	//totalmoves>moveNumberLimit
-//	currPos.print();
-	while(ply<moveNumberLimit*2&&currPos.is_ok()&&!currPos.is_mate()&&!currPos.is_draw()){
-	//	think(currPos,true,true,0,0,0,0,0,timePerMove,moves);
-		neuro::current=networks[(int)currentNetwork];
-		testgo(currPos,maxTime);
-		cout<<"BESTEST GREATESTMOVE "<<BestMove;
-		cout<<'\n';
-		currPos.do_move(BestMove);
-		currentNetwork=!currentNetwork;
-		currPos.print();
-		ply++;
-	}
-	currPos.print();
-}
 int roundScore(float in){
 	if(in>3)return 1;
 	if(in<-3)return -1;
@@ -212,5 +175,140 @@ void startEvaluation(const char* netPath,const char* evalPath){
 	fwrite("\n",sizeof(char),1,out);
 	fclose(out);
 }	
+void testgo(Position RootPosition, int maxTime) {
+    int time[2] = {0, 0}, inc[2] = {0, 0}, movesToGo = 0, nodes = 0;
+    bool infinite = false, ponder = false;
+    Move searchMoves[500];
+
+    searchMoves[0] = MOVE_NONE;
+   int moveDepth=5; 
+    infinite=true;
+
+    think(RootPosition, infinite, ponder, time[RootPosition.side_to_move()],
+          inc[RootPosition.side_to_move()], movesToGo, moveDepth, nodes, maxTime,
+          searchMoves);
+  }
+
+void startGame(const char* fen, const char* path1,const char* path2, int maxTime, int moveNumberLimit, int game){
+	Position currPos=Position(fen);
+	neuro::network* networks[2]= {neuro::init(path1),neuro::init(path2)};
+	bool currentNetwork=false;//false for network 1, true for 2
+	int ply=0;
+	//cout<<"started game "<<game<<'\n';
+	//think() the current position, passing in time per move (in milliseconds)
+	//take the best move
+	//do_move() on the best move
+	//switch neuro::current to the other network
+//	currPos.print();
+	while(ply<moveNumberLimit*2&&currPos.is_ok()&&!currPos.is_mate()&&!currPos.is_draw()){
+	//	think(currPos,true,true,0,0,0,0,0,timePerMove,moves);
+		neuro::current=networks[(int)currentNetwork];
+		testgo(currPos,maxTime);
+		//cout<<"BESTEST GREATESTMOVE "<<BestMove;
+		//cout<<'\n';
+		currPos.do_move(BestMove);
+		currentNetwork=!currentNetwork;
+		//currPos.print();
+		ply++;
+	}
+	//currPos.print();
+	//record winner
+	float score1=0,score2=0;//network 1 and 2 scores
+	if(currPos.is_mate()&&currPos.side_to_move()==1)score1=1;
+	else if(currPos.is_mate()&&currPos.side_to_move()==0)score2=1;
+	else{
+		score1=0.5;
+		score2=0.5;
+	}	
+  	FILE* out=fopen(to_string(game).append(".score").c_str(),"w+");
+	fwrite(&score1,sizeof(float),1,out);
+	fwrite(&score2,sizeof(float),1,out);
+	fclose(out);
+}
+void startGame(const char* path1,const char* path2, int maxTime, int moveNumberLimit){
+	startGame("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",path1,path2,maxTime,moveNumberLimit, 1);
+}
+void startSelfPlay(bool resume, int population, int generations, int maxTime, int moveNumberLimit){
+	vector<string> networkNames;
+	neuro::network* networks=(neuro::network*)malloc(sizeof(neuro::network)*population);
+	for(int i=0;i<population;i++){
+		networks[i]=*neuro::init(5,neuro::inputNum,300,0.02,0.02,2,0.1,50); 
+		neuro::serialize(networks+i,to_string(i).append(".network").c_str());
+		networkNames.push_back(to_string(i).append(".network"));
+	}
+	int gen=0,games=0;
+	string fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	float* scores=(float*)malloc(sizeof(float)*population);
+	while(gen<generations){
+		games=0;
+		cout<<"generation "<<gen<<"\n";
+		//each network plays each network after it, nP2! games
+		for(int n1=0;n1<population-1;n1++){
+			for(int n2=n1+1;n2<population;n2++){
+				//startgame with system() not through this
+				pid_t id = fork();
+				if(id==0){
+					//system(string("./carnosaEngine play ").append(networkNames[n1]).append(" ").append(networkNames[n2]).append(" ").append(to_string(maxTime)).append(" ").append(to_string(moveNumberLimit)).c_str());
+					isChild=true;
+					startGame(fen.c_str(),networkNames[n1].c_str(),networkNames[n2].c_str(),maxTime,moveNumberLimit,games);
+					//figure out why second generation doesnt work
+					exit(0);
+				}
+				games++;	
+			}
+		}
+		//wait until all games are played out
+		int tgames=0;
+		for(int n1=0;n1<population-1;n1++){
+			for(int n2=n1+1;n2<population;n2++){
+				while(!std::filesystem::exists(to_string(tgames).append(".score").c_str())){
+					std::this_thread::sleep_for (std::chrono::seconds(1));	
+				}
+				FILE* f=fopen(to_string(tgames).append(".score").c_str(),"r");
+				float temp=0;
+				fread(&temp,sizeof(float),1,f);
+				scores[n1]+=temp;
+				fread(&temp,sizeof(float),1,f);
+				scores[n2]+=temp;
+				fclose(f);
+				tgames++;
+			}
+		}
+		for(int i=0;i<population-1;i++){
+			for(int j=0;j<population-1;j++){
+				if(scores[j]<scores[j+1]){
+					float temp=scores[j];
+					string strtemp=networkNames[j];
+					neuro::network stemp=networks[j];
+					scores[j]=scores[j+1];
+					networks[j]=networks[j+1];
+					networkNames[j]=networkNames[j+1];
+					scores[j+1]=temp;
+					networks[j+1]=stemp;
+					networkNames[j+1]=strtemp;
+				}
+			}
+		}
+		//reproduce insert into network list 
+		neuro::serialize(networks,"best.network");	
+		neuro::network* children=neuro::reproduce(networks,networks+1);
+		networks[population-4]=children[0];
+		networks[population-3]=children[1];
+		networks[population-2]=children[2];
+		networks[population-1]=children[3];
+
+		for(int i=0;i<population;i++){
+			cout<<networkNames[i]<<" "<<scores[i]<<'\n';
+			scores[i]=0;
+			neuro::serialize(networks+i,to_string(i).append(".network").c_str());	
+			networkNames[i]=to_string(i).append(".network");
+		}
+		//free(children);
+		gen++;
+		for(int i=0;i<games;i++){
+			system(string("rm ").append(to_string(i)).append(".score").c_str());
+		}
+	}
+}
 //pgn-extract -Wfen --selectonly 1:100 --output test database.pgn
 }

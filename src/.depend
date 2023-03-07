@@ -12,12 +12,14 @@ endgame.o: endgame.cpp bitbase.h types.h endgame.h position.h bitboard.h \
 evaluate.o: evaluate.cpp evaluate.h material.h endgame.h position.h \
   bitboard.h direction.h square.h color.h misc.h types.h piece.h move.h \
   phase.h value.h scale.h pawns.h thread.h lock.h movepick.h depth.h \
-  search.h history.h movegen.h tt.h ucioption.h
+  search.h history.h movegen.h tt.h ucioption.h neuro.h
 main.o: main.cpp benchmark.h bitboard.h direction.h square.h color.h \
   misc.h types.h piece.h endgame.h position.h move.h phase.h value.h \
   scale.h evaluate.h material.h pawns.h mersenne.h movepick.h depth.h \
-  lock.h search.h history.h movegen.h tt.h thread.h uci.h ucioption.h
-misc.o: misc.cpp misc.h
+  lock.h search.h history.h movegen.h tt.h thread.h uci.h ucioption.h \
+  fitness.h neuro.h
+misc.o: misc.cpp neuro.h color.h misc.h position.h bitboard.h direction.h \
+  square.h types.h piece.h move.h phase.h value.h
 move.o: move.cpp move.h misc.h piece.h color.h square.h position.h \
   bitboard.h direction.h types.h phase.h value.h ucioption.h
 movegen.o: movegen.cpp movegen.h position.h bitboard.h direction.h \
@@ -30,7 +32,8 @@ movepick.o: movepick.cpp history.h depth.h move.h misc.h piece.h color.h \
 search.o: search.cpp book.h move.h misc.h piece.h color.h square.h \
   position.h bitboard.h direction.h types.h phase.h value.h evaluate.h \
   material.h endgame.h scale.h pawns.h history.h depth.h mersenne.h \
-  movepick.h lock.h san.h search.h movegen.h tt.h thread.h ucioption.h
+  movepick.h lock.h san.h search.h movegen.h tt.h thread.h ucioption.h \
+  fitness.h neuro.h
 piece.o: piece.cpp piece.h color.h misc.h square.h
 position.o: position.cpp mersenne.h types.h movegen.h position.h \
   bitboard.h direction.h square.h color.h misc.h piece.h move.h phase.h \
@@ -59,3 +62,8 @@ benchmark.o: benchmark.cpp benchmark.h search.h depth.h history.h move.h \
   misc.h piece.h color.h square.h lock.h movegen.h position.h bitboard.h \
   direction.h types.h phase.h value.h tt.h thread.h movepick.h \
   ucioption.h
+neuro.o: neuro.cpp neuro.h color.h misc.h position.h bitboard.h \
+  direction.h square.h types.h piece.h move.h phase.h value.h
+fitness.o: fitness.cpp neuro.h color.h misc.h position.h bitboard.h \
+  direction.h square.h types.h piece.h move.h phase.h value.h search.h \
+  depth.h history.h lock.h movegen.h tt.h uci.h

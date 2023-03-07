@@ -10,3 +10,6 @@ test
 **.result
 **.network
 **.selection
+**.score
+src/build/CMakeFiles
+src/build/CMakeCache.txt

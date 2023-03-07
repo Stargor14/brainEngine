@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.10)
+project(visualizer)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD 11)
+add_executable(visualizer visual.cpp)
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(GLFW3 REQUIRED)
+include_directories( ${OPENGL_INCLUDE_DIRS} ${SFML_INCLUDE_DIRS}  ${GLFW3_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
+include_directories(${INCLUDE_DIRS})
+target_link_libraries(visualizer ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw sfml-audio)
+

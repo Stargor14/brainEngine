@@ -40,6 +40,7 @@
 #include "ucioption.h"
 #include "fitness.h"
 #include "neuro.h"
+#include "visual.h"
 
 //// 
 //// Functions
@@ -121,6 +122,15 @@ int main(int argc, char *argv[]) {
 		neuro::current=neuro::init(argv[1]);
   		uci_main_loop();
 
+	}
+	else if(std::string(argv[1]).find("self")!=std::string::npos){
+		fitness::startSelfPlay(false, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+	}
+	else if(std::string(argv[1]).find("resume")!=std::string::npos){
+		fitness::startSelfPlay(true, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+	}
+	else if(std::string(argv[1]).find("create")!=std::string::npos){
+		neuro::serialize(neuro::init(5,904,500,0.01,0.01,2,0.1,5),argv[2]);
 	}
 	else{
 		std::cout<<"no valid argument provided, run with -h or help\n";

@@ -309,6 +309,7 @@ void think(const Position &pos, bool infinite, bool ponder, int time,
     bookMove = OpeningBook.get_move(pos);
     if(bookMove != MOVE_NONE) {
 	fitness::BestMove=bookMove;
+	if(!fitness::isChild)
       std::cout << "bestmove " << bookMove << std::endl;
       return;
     }
@@ -670,13 +671,14 @@ void ch(int curr){
                 << " hashfull " << TT.full() << std::endl;
     }
     // Print the best move and the ponder move to the standard output:
+    if(!fitness::isChild)
     std::cout << "bestmove " << ss[0].pv[0];
    //INSERTED CODE TO INFORM FITNESS FILE OF THE BEST MOVE 
     fitness::BestMove=ss[0].pv[0];
-    if(ss[0].pv[1] != MOVE_NONE)
+    if(ss[0].pv[1] != MOVE_NONE&&!fitness::isChild){
       std::cout << " ponder " << ss[0].pv[1];
     std::cout << std::endl;
-
+    }
     if(UseLogFile) {
       UndoInfo u;
       LogFile << "Nodes: " << nodes_searched() << '\n';

@@ -68,7 +68,8 @@ include .depend
 # Enable/disable debugging:
 
 CXXFLAGS += -DNDEBUG
-
+CXXFLAGS += -std=c++17
+CXXFLAGS += -I/opt/homebrew/include
 
 # Compile with full warnings, and symbol names
 
@@ -79,7 +80,7 @@ CXXFLAGS += -Wall -g
 # systems; this requires testing.
 
 CXXFLAGS += -O3 -fno-exceptions -fomit-frame-pointer -fno-rtti -fstrict-aliasing
-
+#CXXFLAGS += -I/opt/X11/include
 
 # Compiler optimization flags for the Intel C++ compiler in Mac OS X:
 
@@ -108,7 +109,7 @@ CXXFLAGS += -O3 -fno-exceptions -fomit-frame-pointer -fno-rtti -fstrict-aliasing
 
 # General linker flags
 
-LDFLAGS += -lm -lpthread
+LDFLAGS += -lm -lpthread -L/opt/homebrew/lib/ -L/opt/X11/lib/ -lGL -lglfw -lglew
 
 
 # Compiler switches for generating binaries for various CPUs in Mac OS X.
