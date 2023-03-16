@@ -2346,7 +2346,6 @@ void ch(int curr){
 
   bool split(const Position &p, SearchStack *sstck, int ply,Value *alpha, Value *beta, Value *bestValue,Depth depth, int *moves,MovePicker *mp, Bitboard dcCandidates, int master, bool pvNode) {
 	  //instantly return false, split code is poorly written, causes crashes and memory faults
-    return false;
 	  assert(p.is_ok());
     assert(sstck != NULL);
     assert(ply >= 0 && ply < PLY_MAX);

@@ -132,9 +132,15 @@ u_long createConnection(u_int fromAddress, u_int fromLayer, u_int toAddress, u_i
 }
 void insertValue(network* n, int* add, Bitboard b,bool flipped){
 	std::bitset<64> bs(b);
-	if(flipped) bs^=56;
-	for(int i=0;i<64;i++){
-		*neuronAddressLocator(n,0,*add+i,true)=bs[i]*(*neuronAddressLocator(n,0,*add+i,false));
+	if(!flipped){
+		for(int i=0;i<64;i++){
+			*neuronAddressLocator(n,0,*add+i,true)=bs[i]*(*neuronAddressLocator(n,0,*add+i,false));
+		}
+	}
+	else{
+		for(int i=63;i>=0;i--){
+			*neuronAddressLocator(n,0,*add+i,true)=bs[i]*(*neuronAddressLocator(n,0,*add+i,false));
+		}
 	}
 	*add+=64;
 }
@@ -145,7 +151,8 @@ void insertValue(network* n, int* add, bool b){
 float eval(network* n, std::string pos){
 	return eval(n,Position(pos));
 }
-float eval(network* n, Position pos){
+
+float eval(network* n, Position pos, bool ran){
 	/*
 	 * Feeds the bitboard positions into the network
 	 * add feeding of all bitboards, subtraction of opposite color value
@@ -157,6 +164,7 @@ float eval(network* n, Position pos){
 	int counter=0;
 	bool flipped=false;
 	if(pos.side_to_move()==Color::BLACK)flipped=true;
+//	if(ran)flipped=!flipped;
 	std::vector<int> numInp;  	
 	insertValue(n,&counter,pos.pawns(side),flipped);
 	insertValue(n,&counter,pos.pawns(opposite),flipped);
@@ -171,15 +179,15 @@ float eval(network* n, Position pos){
 	insertValue(n,&counter,pos.kings(side),flipped);
 	insertValue(n,&counter,pos.kings(opposite),flipped);
 	//12*64
-	insertValue(n,&counter,pos.can_castle_kingside(side));
-	insertValue(n,&counter,pos.can_castle_kingside(opposite));
-	insertValue(n,&counter,pos.can_castle_queenside(side));
-	insertValue(n,&counter,pos.can_castle_queenside(opposite));
-	insertValue(n,&counter,pos.has_mate_threat(side));
-	insertValue(n,&counter,pos.has_mate_threat(opposite));
+	//insertValue(n,&counter,pos.can_castle_kingside(side));
+	//insertValue(n,&counter,pos.can_castle_kingside(opposite));
+	//insertValue(n,&counter,pos.can_castle_queenside(side));
+	//insertValue(n,&counter,pos.can_castle_queenside(opposite));
+	//insertValue(n,&counter,pos.has_mate_threat(side));
+	//insertValue(n,&counter,pos.has_mate_threat(opposite));
 	//6
 	if(flipped){
-		for(int i=63;i<=0;i--){
+		for(int i=63;i>=0;i--){
 			insertValue(n,&counter,pos.square_is_attacked((Square)i,side));		
 			insertValue(n,&counter,pos.square_is_attacked((Square)i,opposite));		
 		}
@@ -191,6 +199,9 @@ float eval(network* n, Position pos){
 		}
 	}
 	//64*2 -> 902 total
+	//FIX HERE GET RID OF CONNECTIONS AND JUST GO FULLY CONNECECTED
+	//START WITH 0 WEIGHT OF EACH NEURON
+	//subtract from flipped board??
 	for(int i=0;i<n->connectionNum;i++){
 		temp=n->connections[i];
 	//	std::cout<<"to_layer: "<<(n->connections[i]&0xF)<<"to_address: "<<((n->connections[i]>>4)&0xFFFFFFF)<<'\n';
@@ -198,6 +209,15 @@ float eval(network* n, Position pos){
 	
 		*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,true)+=fmax(0,*neuronAddressLocator(n,temp>>32&0xF,temp>>36,true))*(*neuronAddressLocator(n,temp&0xF,temp>>4&0xFFFFFFF,false));
 	}
+	/*
+	for(int layer=0;layer<n->layers-1;layer++){
+		for(int neuron=0;neuron<n->layerNeuronCount[layer];neuron++){
+			for(int destination=0;destination<n->layerNeuronCount[layer+1];destination++){
+				*neuronAddressLocator(n,layer+1,destination,true)+=fmax(0,*neuronAddressLocator(n,layer,neuron,true))*(*neuronAddressLocator(n,layer+1,destination,false));
+			}
+		}
+	}
+	*/
 	for(int i=0;i<n->layerNeuronCount[n->layers-1];i++){
 		ans+=*neuronAddressLocator(n,n->layers-1,i,true);
 //		std::cout<<"adding "<<*neuronAddressLocator(n,n->layers-1,i,true)<<'\n';
@@ -205,9 +225,13 @@ float eval(network* n, Position pos){
 	//std::cout<<"info 0 score: "<<ans<<'\n';
 	clear(n);
 	if(pos.is_mate())ans=-9999999; 
-	if(pos.is_draw())ans=0; 
+	else if(pos.is_draw())ans=0; 
+	//else if(!ran)ans-=eval(n,pos,true);
 	if(pos.side_to_move()==Color::WHITE)return ans;
 	else{return -ans;}
+}
+float eval(network* n, Position pos){
+	return eval(n, pos, false);
 }
 network* reproduce(network* n1,network* n2){
 	/*

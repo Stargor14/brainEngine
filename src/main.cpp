@@ -101,11 +101,6 @@ int main(int argc, char *argv[]) {
 			std::cout<<"please provide a selection file, or name for new selection file, name of eval file, the number of networks in each generation, and the number of generations to run selection for\n";
 		}
 	}
-	else if(!strcmp(argv[1],"uci")||!strcmp(argv[1],"-u")){
-		if(std::string(argv[2]).find(".network") != std::string::npos){
-			//add uci mode?
-		}
-	}
 	else if(!strcmp(argv[1],"generate")||!strcmp(argv[1],"-g")){
 		fitness::generateFile(argv[2]);	
 	}
@@ -131,6 +126,11 @@ int main(int argc, char *argv[]) {
 	}
 	else if(std::string(argv[1]).find("create")!=std::string::npos){
 		neuro::serialize(neuro::init(5,904,500,0.01,0.01,2,0.1,5),argv[2]);
+	}
+	else if(std::string(argv[1]).find("time")!=std::string::npos){
+		neuro::network* n=neuro::init(4,904,500,0.01,0.01,2,0.1,5);
+//		for(int i=0;i<9000;i++)
+		std::cout<<neuro::eval(n,Position("r1b1kbnr/pppp2pp/2n5/5q2/5P2/P7/1PP1P1PP/RNBQKBNR w KQkq - 0 1"))<<'\n';
 	}
 	else{
 		std::cout<<"no valid argument provided, run with -h or help\n";

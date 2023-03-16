@@ -1,14 +1,26 @@
 add param mutation to mutation function
 
-write self play recording 
-self play until checkmate or draw
+clean up fitness and neuro file
 
-score file,
+keep unit testing self play
+port to windows
+do stability tests and train on pc
 
-scan through for the network name
-if network there, add on the final score of its game
-if not, initilize it
-count total amount of games in the top of the file
-once all games are played, sort the scores, reproduce the top 4 networks
+training test stages:
+
+10minutes - stability testing (does it even complete)
+1 hour - funcitonality testing (does it actually work) 
+12 hours - elo testing (how good is it)
+3 days - stability test/ elo testing (can it run for 72 hours without bugs? 
 
 
+FIND OUT WHY MULTIPLE GENERATIONS ARENT WORKING
+SORT BREAKING? STUCK IN INFIITE WHILE LOOP??
+
+transition to fully connected network!!!! 
+variable layer sizes?
+subtract from a flipped version in the eval function?
+
+figure out how to return 0 at initial board, and nonzero at other positions
+
+write move recording
