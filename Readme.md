@@ -1,6 +1,4 @@
-glaurung 2.0 fork
-
-CarnosaEngine
+# CarnosaEngine, project scrapped/paused
 
 Neuroevolution/genetic algorithm based eval function training
 
