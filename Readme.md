@@ -1,5 +1,7 @@
 # CarnosaEngine, project scrapped/paused
 
+## Topics: Evolutionary/Genetic Algorithms, Neural Networks, Chess, Game theory
+
 Neuroevolution/genetic algorithm based eval function training
 
 Networks use asexual and sexual based reproduction, like the hoya carnosa plant
